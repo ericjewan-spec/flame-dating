@@ -39,8 +39,8 @@
 .no-results{text-align:center;padding:60px 20px;color:#555;font-size:16px;display:none}
 .no-results span{font-size:48px;display:block;margin-bottom:16px}
 
-@media(max-width:768px){.hbt{flex-direction:column}.pg{grid-template-columns:1fr}.nb,.db{display:none}.sticky-cta{display:block}.filter-bar{flex-direction:column}.filter-bar input[type="text"],.filter-bar select{width:100%}}</style></head><body>
-<nav class="nv"><div class="ni"><a onclick="showPage('home')" class="lo">🔥 Flame <span class="gy">GY</span></a><div class="nl"><a onclick="showPage('home')" class="nb">Discover</a><a onclick="openLogin()" class="nb">👤 My Profile</a><a href="#donate" class="db">❤️ Donate</a><button onclick="openSignup()" class="sb">Sign Up Free</button></div></div></nav>
+@media(max-width:768px){.hbt{flex-direction:column}.pg{grid-template-columns:1fr}.nb,.db{display:none}.nb.profile-link{display:inline-block}.sticky-cta{display:block}.filter-bar{flex-direction:column}.filter-bar input[type="text"],.filter-bar select{width:100%}}</style></head><body>
+<nav class="nv"><div class="ni"><a onclick="showPage('home')" class="lo">🔥 Flame <span class="gy">GY</span></a><div class="nl"><a onclick="showPage('home')" class="nb">Discover</a><a onclick="openLogin()" class="nb profile-link" style="cursor:pointer">👤 My Profile</a><a href="#donate" class="db">❤️ Donate</a><button onclick="openSignup()" class="sb">Sign Up Free</button></div></div></nav>
 
 <div id="homePage">
 <section class="hr"><div class="hg"></div><div class="hc"><div class="hb"><span class="hd"></span>🇬🇾 Guyanese singles are online now</div><h1>Find Your <span class="ac">Flame</span> in Guyana</h1><p class="hs">Real people from Georgetown to Lethem. Browse profiles, see photo galleries, and connect instantly via WhatsApp.</p><div class="hbt"><a onclick="showPage('home');document.getElementById('profiles').scrollIntoView({behavior:'smooth'})" class="bp">Browse Singles 🔥</a><button onclick="openSignup()" class="bs2">Create Your Profile</button></div><div class="st" id="statsSection"><div><div class="sn" data-target="500" data-suffix="+">0</div><div class="sl">Active Users</div></div><div><div class="sn" data-target="100" data-suffix="%">0</div><div class="sl">Guyanese</div></div><div><div class="sn" data-target="14" data-suffix="">0</div><div class="sl">Cities</div></div></div></div></section>
@@ -285,6 +285,10 @@ function submitProfile(){
 var n=document.getElementById('sf_name').value,p=document.getElementById('sf_phone').value,a=document.getElementById('sf_age').value;
 if(!n||!p){alert('Please enter your name and phone number');return}
 var prof={name:n,phone:p,age:a,gender:document.getElementById('sf_gender').value,nationality:document.getElementById('sf_nationality').value,city:document.getElementById('sf_city').value,rate:document.getElementById('sf_rate').value,bio:document.getElementById('sf_bio').value};
+// Save photo dataURLs for display on cards
+if(selectedPhotos.length>0){
+prof.photoUrls=selectedPhotos.map(function(ph){return ph.dataUrl});
+}
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');saved.push(prof);localStorage.setItem('flameProfiles',JSON.stringify(saved));
 addProfileCard(prof);
 document.getElementById('signupForm').style.display='none';document.getElementById('welcomeMsg').textContent=n+', your profile is now live! People can reach you on WhatsApp.';document.getElementById('signupSuccess').style.display='block';
@@ -301,7 +305,14 @@ card.setAttribute('data-name',(p.name||'').toLowerCase());
 card.setAttribute('data-city',p.city||'Georgetown');
 card.setAttribute('data-gender',p.gender||'');
 card.setAttribute('data-age',p.age||'0');
-card.innerHTML='<div class="cm" style="height:200px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:64px">🔥</div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 '+p.rate+'/hr</span>':'')+'<h3 style="font-family:Playfair Display,serif;font-size:22px;margin:8px 0 2px">'+p.name+(p.age?', '+p.age:'')+'</h3><div class="cl" style="margin-bottom:10px">📍 '+(p.city||'Georgetown')+', Guyana</div><p class="bi">'+(p.bio||'New to Flame!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a></div></div>';
+// Build photo section - use uploaded photos if available
+var photoHTML='';
+if(p.photoUrls&&p.photoUrls.length>0){
+photoHTML=buildCarousel(p.photoUrls,p.name)+'<div class="co"></div>';
+}else{
+photoHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:64px">🔥</div></div>';
+}
+card.innerHTML='<div class="cm" style="height:280px">'+photoHTML+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 '+p.rate+'/hr</span>':'')+'<p class="bi">'+(p.bio||'New to Flame!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a></div></div>';
 g.insertBefore(card,g.firstChild);
 filterProfiles()}
 
