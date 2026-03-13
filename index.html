@@ -131,8 +131,8 @@ h1{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,72px);font-weig
 <a onclick="goHome()" class="lo">🔥 Flame <span class="gy">GY</span></a>
 <div class="nl">
 <a onclick="goHome()" class="nb">Discover</a>
-<button onclick="openLogin()" class="profile-btn">👤 My Profile</button>
-<button onclick="openSignup()" class="sb">Sign Up Free</button>
+<button onclick="handleProfileBtn()" class="profile-btn" id="navProfileBtn">👤 My Profile</button>
+<button onclick="openSignup()" class="sb" id="navSignupBtn">Sign Up Free</button>
 </div>
 </div></nav>
 
@@ -263,6 +263,13 @@ h1{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,72px);font-weig
 <label>City</label>
 <select id="ed_city"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
 <label>About You</label><textarea id="ed_bio"></textarea>
+<label>Your Photos</label>
+<div id="edPhotoPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
+<div id="edPhotoUploadArea" style="border:2px dashed #2a2a2a;border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:border-color .3s" onclick="document.getElementById('ed_photos').click()">
+<div style="color:#888;font-size:14px">📷 Tap to add/replace photos</div>
+<input type="file" id="ed_photos" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleEditPhotos(this.files)">
+</div>
+<div id="edPhotoCount" style="font-size:11px;color:#555"></div>
 <label>New Password (leave blank to keep current)</label><input type="password" id="ed_password" placeholder="Optional new password">
 <button class="sbtn" onclick="saveProfile()">💾 Save Changes</button>
 <button style="background:none;border:1px solid #333;color:#aaa;padding:14px;border-radius:12px;font-size:14px;cursor:pointer;width:100%;margin-top:4px" onclick="closeModal('loginModal')">Cancel</button>
@@ -280,259 +287,229 @@ h1{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,72px);font-weig
 <script>
 var SHEET_URL='https://script.google.com/macros/s/AKfycbwVU_bptRxuj2_9oBegbH83ITBVEiZ7Xk8Aexdl-5ROOnlD6KKWRYa8-dP23I2dx4ax/exec';
 var selectedPhotos=[];
+var editPhotos=[];
 var MAX_PHOTOS=5;
 var editingIdx=-1;
+var loggedInUser=JSON.parse(sessionStorage.getItem('flameUser')||'null');
 
-// === NAVIGATION ===
-function goHome(){
-document.getElementById('homePage').style.display='block';
-document.getElementById('profileView').style.display='none';
-window.scrollTo(0,0);
+function goHome(){document.getElementById('homePage').style.display='block';document.getElementById('profileView').style.display='none';window.scrollTo(0,0)}
+function isLoggedIn(){return loggedInUser!==null}
+function setLoggedIn(phone){loggedInUser={phone:phone};sessionStorage.setItem('flameUser',JSON.stringify(loggedInUser));updateNavState()}
+function updateNavState(){
+var btn=document.getElementById('navProfileBtn');
+var sbtn=document.getElementById('navSignupBtn');
+if(isLoggedIn()){btn.textContent='⚙️ Settings';sbtn.style.display='none'}
+else{btn.textContent='👤 My Profile';sbtn.style.display=''}
 }
 
-// === MODALS ===
 function openSignup(){document.getElementById('signupModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('signupForm').style.display='block';document.getElementById('signupSuccess').style.display='none'}
 function openLogin(){document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('loginForm').style.display='block';document.getElementById('editForm').style.display='none';document.getElementById('editSuccess').style.display='none';document.getElementById('login_phone').value='';document.getElementById('login_password').value=''}
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
 document.getElementById('signupModal').addEventListener('click',function(e){if(e.target===this)closeModal('signupModal')});
 document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===this)closeModal('loginModal')});
 
-// === PHOTOS ===
+function handleProfileBtn(){
+if(isLoggedIn()){
+var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
+var cleanP=loggedInUser.phone.replace(/\D/g,'');
+for(var i=0;i<saved.length;i++){
+if(saved[i].phone.replace(/\D/g,'')===cleanP){
+editingIdx=i;var pr=saved[i];
+document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';
+document.getElementById('loginForm').style.display='none';document.getElementById('editForm').style.display='block';document.getElementById('editSuccess').style.display='none';
+document.getElementById('ed_name').value=pr.name||'';document.getElementById('ed_phone').value=pr.phone||'';
+document.getElementById('ed_age').value=pr.age||'';document.getElementById('ed_gender').value=pr.gender||'';
+document.getElementById('ed_nationality').value=pr.nationality||'';document.getElementById('ed_city').value=pr.city||'';
+document.getElementById('ed_bio').value=pr.bio||'';document.getElementById('ed_password').value='';
+loadEditPhotos(pr);return;
+}}
+}
+openLogin();
+}
+
+// SIGNUP PHOTOS
 function handlePhotos(files){
-var remaining=MAX_PHOTOS-selectedPhotos.length;
-if(remaining<=0){alert('Maximum 5 photos');return}
-Array.from(files).slice(0,remaining).forEach(function(f){
-if(f.size>5*1024*1024){alert(f.name+' too large (5MB max)');return}
-if(!f.type.match(/image\/(jpeg|png|webp)/)){alert(f.name+' not supported');return}
-var r=new FileReader();
-r.onload=function(e){selectedPhotos.push({dataUrl:e.target.result});renderPreviews()};
-r.readAsDataURL(f);
+var rem=MAX_PHOTOS-selectedPhotos.length;if(rem<=0){alert('Max 5 photos');return}
+Array.from(files).slice(0,rem).forEach(function(f){
+if(f.size>5242880||!f.type.match(/image\/(jpeg|png|webp)/))return;
+var r=new FileReader();r.onload=function(e){selectedPhotos.push({dataUrl:e.target.result});renderPreviews()};r.readAsDataURL(f);
 });
 }
 function renderPreviews(){
 var c=document.getElementById('photoPreview');c.innerHTML='';
-selectedPhotos.forEach(function(p,i){
-var d=document.createElement('div');
-d.style.cssText='position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid #2a2a2a';
-d.innerHTML='<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover"><div onclick="event.stopPropagation();rmPhoto('+i+')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#fff">✕</div>';
-c.appendChild(d);
-});
+selectedPhotos.forEach(function(p,i){var d=document.createElement('div');d.style.cssText='position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid #2a2a2a';d.innerHTML='<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover"><div onclick="event.stopPropagation();rmPhoto('+i+')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#fff">✕</div>';c.appendChild(d)});
 document.getElementById('photoCount').textContent=selectedPhotos.length?selectedPhotos.length+'/5 photos':'';
 }
 function rmPhoto(i){selectedPhotos.splice(i,1);renderPreviews()}
 
-// === SHEET ===
-function sendToSheet(data){
-var payload=Object.assign({},data);delete payload.photoUrls;delete payload.password;
-fetch(SHEET_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}}).catch(function(e){console.log('Sheet error:',e)})}
+// EDIT PHOTOS
+function loadEditPhotos(pr){editPhotos=(pr.photoUrls||[]).map(function(u){return{dataUrl:u}});renderEditPreviews()}
+function handleEditPhotos(files){
+var rem=MAX_PHOTOS-editPhotos.length;if(rem<=0){alert('Max 5 photos');return}
+Array.from(files).slice(0,rem).forEach(function(f){
+if(f.size>5242880||!f.type.match(/image\/(jpeg|png|webp)/))return;
+var r=new FileReader();r.onload=function(e){editPhotos.push({dataUrl:e.target.result});renderEditPreviews()};r.readAsDataURL(f);
+});
+}
+function renderEditPreviews(){
+var c=document.getElementById('edPhotoPreview');c.innerHTML='';
+editPhotos.forEach(function(p,i){var d=document.createElement('div');d.style.cssText='position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid #2a2a2a';d.innerHTML='<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover"><div onclick="rmEditPhoto('+i+')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#fff">✕</div>';c.appendChild(d)});
+document.getElementById('edPhotoCount').textContent=editPhotos.length?editPhotos.length+'/5 photos':'No photos yet';
+}
+function rmEditPhoto(i){editPhotos.splice(i,1);renderEditPreviews()}
 
-// === SIGNUP ===
+// SHEET DATABASE
+function sendToSheet(data){
+var payload={name:data.name||'',phone:data.phone||'',age:data.age||'',gender:data.gender||'',nationality:data.nationality||'',city:data.city||'',bio:data.bio||'',photoCount:(data.photoUrls||[]).length};
+fetch(SHEET_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}}).then(function(){console.log('Sheet OK')}).catch(function(e){console.log('Sheet err:',e)})}
+
+// SIGNUP
 function submitProfile(){
-var n=document.getElementById('sf_name').value.trim();
-var p=document.getElementById('sf_phone').value.trim();
-var pw=document.getElementById('sf_password').value;
-if(!n){alert('Please enter your name');return}
-if(!p){alert('Please enter your phone number');return}
+var n=document.getElementById('sf_name').value.trim(),p=document.getElementById('sf_phone').value.trim(),pw=document.getElementById('sf_password').value;
+if(!n){alert('Please enter your name');return}if(!p){alert('Please enter your phone number');return}
 if(!pw||pw.length<6){alert('Password must be at least 6 characters');return}
-// Check if phone already exists
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
 var cleanP=p.replace(/\D/g,'');
-for(var i=0;i<saved.length;i++){if(saved[i].phone.replace(/\D/g,'')===cleanP){alert('A profile with this number already exists. Try logging in.');return}}
+for(var i=0;i<saved.length;i++){if(saved[i].phone.replace(/\D/g,'')===cleanP){alert('This number already exists. Try logging in.');return}}
 var prof={name:n,phone:p,password:pw,age:document.getElementById('sf_age').value,gender:document.getElementById('sf_gender').value,nationality:document.getElementById('sf_nationality').value,city:document.getElementById('sf_city').value,bio:document.getElementById('sf_bio').value};
 if(selectedPhotos.length>0) prof.photoUrls=selectedPhotos.map(function(x){return x.dataUrl});
 saved.push(prof);localStorage.setItem('flameProfiles',JSON.stringify(saved));
-addProfileCard(prof,saved.length-1);
-document.getElementById('signupForm').style.display='none';
-document.getElementById('welcomeMsg').textContent=n+', your profile is now live!';
-document.getElementById('signupSuccess').style.display='block';
+setLoggedIn(p);addProfileCard(prof,saved.length-1);
+document.getElementById('signupForm').style.display='none';document.getElementById('welcomeMsg').textContent=n+', your profile is now live!';document.getElementById('signupSuccess').style.display='block';
 sendToSheet(prof);selectedPhotos=[];
 }
 
-// === LOGIN ===
+// LOGIN
 function loginProfile(){
-var p=document.getElementById('login_phone').value.trim();
-var pw=document.getElementById('login_password').value;
-if(!p||!pw){alert('Enter your phone number and password');return}
+var p=document.getElementById('login_phone').value.trim(),pw=document.getElementById('login_password').value;
+if(!p||!pw){alert('Enter phone and password');return}
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
-var cleanP=p.replace(/\D/g,'');var found=-1;
+var cleanP=p.replace(/\D/g,''),found=-1;
 for(var i=0;i<saved.length;i++){if(saved[i].phone.replace(/\D/g,'')===cleanP){found=i;break}}
-if(found===-1){alert('No profile found with this number');return}
-if(saved[found].password!==pw){alert('Incorrect password');return}
-editingIdx=found;var pr=saved[found];
-document.getElementById('ed_name').value=pr.name||'';
-document.getElementById('ed_phone').value=pr.phone||'';
-document.getElementById('ed_age').value=pr.age||'';
-document.getElementById('ed_gender').value=pr.gender||'';
-document.getElementById('ed_nationality').value=pr.nationality||'';
-document.getElementById('ed_city').value=pr.city||'';
-document.getElementById('ed_bio').value=pr.bio||'';
-document.getElementById('ed_password').value='';
-document.getElementById('loginForm').style.display='none';
-document.getElementById('editForm').style.display='block';
+if(found===-1){alert('No profile found');return}if(saved[found].password!==pw){alert('Incorrect password');return}
+setLoggedIn(p);editingIdx=found;var pr=saved[found];
+document.getElementById('ed_name').value=pr.name||'';document.getElementById('ed_phone').value=pr.phone||'';
+document.getElementById('ed_age').value=pr.age||'';document.getElementById('ed_gender').value=pr.gender||'';
+document.getElementById('ed_nationality').value=pr.nationality||'';document.getElementById('ed_city').value=pr.city||'';
+document.getElementById('ed_bio').value=pr.bio||'';document.getElementById('ed_password').value='';
+loadEditPhotos(pr);document.getElementById('loginForm').style.display='none';document.getElementById('editForm').style.display='block';
 }
 
-// === SAVE PROFILE EDITS ===
+// SAVE EDITS
 function saveProfile(){
-var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
-if(editingIdx<0) return;
+var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');if(editingIdx<0)return;
 var pr=saved[editingIdx];
-pr.name=document.getElementById('ed_name').value;
-pr.age=document.getElementById('ed_age').value;
-pr.gender=document.getElementById('ed_gender').value;
-pr.nationality=document.getElementById('ed_nationality').value;
-pr.city=document.getElementById('ed_city').value;
-pr.bio=document.getElementById('ed_bio').value;
-var newPw=document.getElementById('ed_password').value;
-if(newPw&&newPw.length>=6) pr.password=newPw;
+pr.name=document.getElementById('ed_name').value;pr.age=document.getElementById('ed_age').value;
+pr.gender=document.getElementById('ed_gender').value;pr.nationality=document.getElementById('ed_nationality').value;
+pr.city=document.getElementById('ed_city').value;pr.bio=document.getElementById('ed_bio').value;
+pr.photoUrls=editPhotos.map(function(x){return x.dataUrl});
+var newPw=document.getElementById('ed_password').value;if(newPw&&newPw.length>=6)pr.password=newPw;
 saved[editingIdx]=pr;localStorage.setItem('flameProfiles',JSON.stringify(saved));
-sendToSheet(pr);
-document.getElementById('editForm').style.display='none';
-document.getElementById('editSuccess').style.display='block';
+sendToSheet(pr);document.getElementById('editForm').style.display='none';document.getElementById('editSuccess').style.display='block';
 rebuildUserCards();
 }
+function rebuildUserCards(){document.querySelectorAll('#ppg .user-card').forEach(function(c){c.remove()});var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');saved.forEach(function(p,i){addProfileCard(p,i)});filterProfiles()}
 
-function rebuildUserCards(){
-document.querySelectorAll('#ppg .user-card').forEach(function(c){c.remove()});
-var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
-saved.forEach(function(p,i){addProfileCard(p,i)});
-filterProfiles();
-}
-
-// === PROFILE CARDS ===
+// PROFILE CARDS
 function addProfileCard(p,idx){
-var g=document.getElementById('ppg');
-var card=document.createElement('div');card.className='cd user-card';card.style.animation='fu .5s ease both';
-card.setAttribute('data-name',(p.name||'').toLowerCase());
-card.setAttribute('data-city',p.city||'');
-card.setAttribute('data-gender',p.gender||'');
-card.setAttribute('data-age',p.age||'0');
-card.setAttribute('data-idx','user-'+idx);
-card.onclick=function(e){if(!e.target.closest('.carousel-btn')&&!e.target.closest('.carousel-dots'))openProfileView('user',idx)};
-var photoHTML;
-if(p.photoUrls&&p.photoUrls.length>0){
-photoHTML=buildCarousel(p.photoUrls,p.name)+'<div class="co"></div>';
-}else{
-photoHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:64px">🔥</div></div>';
-}
-card.innerHTML='<div class="cm">'+photoHTML+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div><p class="bi">'+(p.bio||'New to Flame!')+'</p></div>';
+var g=document.getElementById('ppg'),card=document.createElement('div');card.className='cd user-card';card.style.animation='fu .5s ease both';
+card.setAttribute('data-name',(p.name||'').toLowerCase());card.setAttribute('data-city',p.city||'');card.setAttribute('data-gender',p.gender||'');card.setAttribute('data-age',p.age||'0');
+card.onclick=function(e){if(!e.target.closest('.carousel-btn')&&!e.target.closest('.carousel-dots')&&!e.target.closest('.wa'))openProfileView('user',idx)};
+var ph=p.phone.replace(/\D/g,''),wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
+var photoHTML=(p.photoUrls&&p.photoUrls.length>0)?buildCarousel(p.photoUrls,p.name)+'<div class="co"></div>':'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:64px">🔥</div></div>';
+card.innerHTML='<div class="cm">'+photoHTML+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div><p class="bi">'+(p.bio||'New to Flame!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa" onclick="event.stopPropagation()">💬 WhatsApp</a><span class="gb" onclick="event.stopPropagation();openProfileView(\'user\','+idx+')">View Profile</span></div></div>';
 g.insertBefore(card,g.firstChild);
 }
 
-// === CAROUSEL ===
+// CAROUSEL WITH TOUCH SWIPE
 function buildCarousel(imgs,name){
-if(imgs.length<=1) return '<img src="'+imgs[0]+'" alt="'+name+'" loading="lazy" class="active" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">';
-var h='<div class="carousel-wrap" data-index="0">';
-imgs.forEach(function(img,i){h+='<img src="'+img+'" alt="'+name+'" loading="lazy" class="'+(i===0?'active':'')+'">'});
+if(!imgs||!imgs.length)return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a1a"><div style="font-size:64px">🔥</div></div>';
+if(imgs.length===1)return '<img src="'+imgs[0]+'" alt="'+(name||'')+'" loading="lazy" class="active" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">';
+var id='c'+Math.random().toString(36).substr(2,6);
+var h='<div class="carousel-wrap" data-index="0" id="'+id+'">';
+imgs.forEach(function(img,i){h+='<img src="'+img+'" alt="'+(name||'')+'" loading="lazy" class="'+(i===0?'active':'')+'">'});
 h+='</div><button class="carousel-btn prev" onclick="event.stopPropagation();cNav(this,-1)">‹</button><button class="carousel-btn next" onclick="event.stopPropagation();cNav(this,1)">›</button><div class="carousel-dots">';
 imgs.forEach(function(_,i){h+='<span class="'+(i===0?'active':'')+'" onclick="event.stopPropagation();cGo(this,'+i+')"></span>'});
-return h+'</div>';
+h+='</div>';
+setTimeout(function(){initSwipe(document.getElementById(id))},150);
+return h;
 }
 function cNav(btn,dir){
-var w=btn.closest('.cm').querySelector('.carousel-wrap');if(!w)return;
-var imgs=w.querySelectorAll('img'),dots=btn.closest('.cm').querySelectorAll('.carousel-dots span');
+var cm=btn.closest('.cm')||btn.closest('.pv-gallery');var w=cm.querySelector('.carousel-wrap');if(!w)return;
+var imgs=w.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');
 var idx=(parseInt(w.dataset.index)+dir+imgs.length)%imgs.length;w.dataset.index=idx;
-imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});
-if(dots.length)dots.forEach(function(d,i){d.classList.toggle('active',i===idx)});
-}
-function cGo(dot,idx){
-var w=dot.closest('.cm').querySelector('.carousel-wrap');if(!w)return;
-var imgs=w.querySelectorAll('img'),dots=dot.closest('.carousel-dots').querySelectorAll('span');
-w.dataset.index=idx;
 imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});
 dots.forEach(function(d,i){d.classList.toggle('active',i===idx)});
 }
-
-// === PROFILE VIEW PAGE ===
-function openProfileView(type,idx){
-var p;
-if(type==='preset') p=PROFILES[idx];
-else{var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');p=saved[idx]}
-if(!p)return;
-document.getElementById('homePage').style.display='none';
-var pv=document.getElementById('profileView');pv.style.display='block';
-window.scrollTo(0,0);
-// Gallery
-var gallery=document.getElementById('pvGallery');
-var imgs=p.photoUrls||p.imgs||[];
-if(imgs.length>0){
-gallery.innerHTML=buildCarousel(imgs,p.name||p.n);
-gallery.style.background='#111';
-}else{
-gallery.innerHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:80px">🔥</div></div>';
+function cGo(dot,idx){
+var cm=dot.closest('.cm')||dot.closest('.pv-gallery');var w=cm.querySelector('.carousel-wrap');if(!w)return;
+var imgs=w.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');
+w.dataset.index=idx;imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(d,i){d.classList.toggle('active',i===idx)});
 }
-// Info
+function initSwipe(wrap){
+if(!wrap)return;var sx=0,moving=false;
+wrap.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;moving=true},{passive:true});
+wrap.addEventListener('touchend',function(e){
+if(!moving)return;moving=false;var dx=e.changedTouches[0].clientX-sx;
+if(Math.abs(dx)>40){
+var cm=wrap.closest('.cm')||wrap.closest('.pv-gallery');
+var imgs=wrap.querySelectorAll('img'),dots=cm?cm.querySelectorAll('.carousel-dots span'):[];
+var idx=(parseInt(wrap.dataset.index)+(dx<0?1:-1)+imgs.length)%imgs.length;wrap.dataset.index=idx;
+imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(d,i){d.classList.toggle('active',i===idx)});
+}},{passive:true});
+}
+
+// PROFILE VIEW (requires sign up)
+function openProfileView(type,idx){
+if(!isLoggedIn()){openSignup();return}
+var p;if(type==='preset')p=PROFILES[idx];else{var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');p=saved[idx]}
+if(!p)return;
+document.getElementById('homePage').style.display='none';document.getElementById('profileView').style.display='block';window.scrollTo(0,0);
+var gallery=document.getElementById('pvGallery'),imgs=p.photoUrls||p.imgs||[];
+if(imgs.length>0){gallery.innerHTML=buildCarousel(imgs,p.name||p.n);gallery.style.background='#111'}
+else{gallery.innerHTML='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222)"><div style="font-size:80px">🔥</div></div>'}
 document.getElementById('pvName').textContent=(p.name||p.n)+(p.age||p.a?', '+(p.age||p.a):'');
 document.getElementById('pvLoc').textContent='📍 '+(p.city||p.c||'Georgetown')+', Guyana — '+(p.nationality||'Guyanese');
 document.getElementById('pvBio').textContent=p.bio||p.b||'';
-// Tags
-var tags=p.t||[];
-var tagHTML='';tags.forEach(function(t){tagHTML+='<span class="pv-tag">'+t+'</span>'});
-document.getElementById('pvTags').innerHTML=tagHTML;
-// WhatsApp
-var ph=(p.phone||p.p||'').replace(/\D/g,'');
-document.getElementById('pvWa').href='https://wa.me/'+ph+'?text=Hey%20'+(p.name||p.n)+'%20Found%20you%20on%20Flame!';
+var tags=p.t||[];var tagH='';tags.forEach(function(t){tagH+='<span class="pv-tag">'+t+'</span>'});document.getElementById('pvTags').innerHTML=tagH;
+var ph=(p.phone||p.p||'').replace(/\D/g,'');document.getElementById('pvWa').href='https://wa.me/'+ph+'?text=Hey%20'+(p.name||p.n)+'%20Found%20you%20on%20Flame!';
 }
 
-// === FILTERS ===
+// FILTERS
 function filterProfiles(){
-var s=document.getElementById('searchInput').value.toLowerCase();
-var city=document.getElementById('filterCity').value;
-var gender=document.getElementById('filterGender').value;
-var cards=document.querySelectorAll('#ppg .cd');var vis=0;
-cards.forEach(function(c){
-var show=true;
-if(s&&(c.dataset.name||'').indexOf(s)===-1) show=false;
-if(city&&c.dataset.city!==city) show=false;
-if(gender&&c.dataset.gender!==gender) show=false;
-c.style.display=show?'':'none';if(show) vis++;
-});
-document.getElementById('filterCount').textContent=vis+' profile'+(vis!==1?'s':'');
-document.getElementById('noResults').style.display=vis===0?'block':'none';
+var s=document.getElementById('searchInput').value.toLowerCase(),city=document.getElementById('filterCity').value,gender=document.getElementById('filterGender').value;
+var cards=document.querySelectorAll('#ppg .cd'),vis=0;
+cards.forEach(function(c){var show=true;if(s&&(c.dataset.name||'').indexOf(s)===-1)show=false;if(city&&c.dataset.city!==city)show=false;if(gender&&c.dataset.gender!==gender)show=false;c.style.display=show?'':'none';if(show)vis++});
+document.getElementById('filterCount').textContent=vis+' profile'+(vis!==1?'s':'');document.getElementById('noResults').style.display=vis===0?'block':'none';
 }
 function resetFilters(){document.getElementById('searchInput').value='';document.getElementById('filterCity').value='';document.getElementById('filterGender').value='';filterProfiles()}
 
-// === ANIMATED COUNTERS ===
-var statsAnimated=false;
-function animateCounters(){
-if(statsAnimated)return;statsAnimated=true;
-document.querySelectorAll('#statsSection .sn').forEach(function(el){
-var target=parseInt(el.dataset.target),suffix=el.dataset.suffix||'',start=null;
-function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/1500,1);el.textContent=Math.floor((1-Math.pow(1-p,3))*target)+suffix;if(p<1)requestAnimationFrame(step)}
-requestAnimationFrame(step);
-});
-}
+// COUNTERS & STICKY
+var sa=false;function animateCounters(){if(sa)return;sa=true;document.querySelectorAll('#statsSection .sn').forEach(function(el){var t=parseInt(el.dataset.target),s=el.dataset.suffix||'',st=null;function step(ts){if(!st)st=ts;var p=Math.min((ts-st)/1500,1);el.textContent=Math.floor((1-Math.pow(1-p,3))*t)+s;if(p<1)requestAnimationFrame(step)}requestAnimationFrame(step)})}
 new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting)animateCounters()})},{threshold:.3}).observe(document.getElementById('statsSection'));
+new IntersectionObserver(function(e){e.forEach(function(en){document.getElementById('stickyCta').style.display=(!en.isIntersecting&&window.innerWidth<=768)?'block':'none'})},{threshold:.1}).observe(document.querySelector('.hr'));
 
-// === STICKY CTA ===
-new IntersectionObserver(function(e){e.forEach(function(en){
-document.getElementById('stickyCta').style.display=(!en.isIntersecting&&window.innerWidth<=768)?'block':'none';
-})},{threshold:.1}).observe(document.querySelector('.hr'));
-
-// === PRESET PROFILES (NO PRICING) ===
+// PRESET PROFILES
 var PROFILES=[
 {n:"Natasha",a:24,c:"Georgetown",g:"Woman",b:"Dancehall queen & pharmacy student. Love the beach and cooking for friends.",p:"+5926001001",imgs:["https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop"],t:["Dancing","Beach","Cooking"],v:1},
-{n:"Priya",a:27,c:"Georgetown",g:"Woman",b:"Software dev & cricket fanatic. Looking for someone who can keep up.",p:"+5926001002",imgs:["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"],t:["Cricket","Tech","Cooking"],v:1},
-{n:"Shantel",a:22,c:"Linden",g:"Woman",b:"Nursing student & karaoke lover. Life's too short to be boring.",p:"+5926001003",imgs:["https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1496440737103-cd596325d314?w=600&h=800&fit=crop"],t:["Music","Carnival","Fitness"],v:0},
-{n:"Anisa",a:25,c:"New Amsterdam",g:"Woman",b:"Teacher by day, artist by night. I paint, I dream, I love deeply.",p:"+5926001004",imgs:["https://images.unsplash.com/photo-1514315384763-ba401779410f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&h=800&fit=crop"],t:["Art","Teaching","Reading"],v:1},
-{n:"Camille",a:29,c:"Bartica",g:"Woman",b:"Adventure junkie & nature photographer. Let's explore the interior together.",p:"+5926001005",imgs:["https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=600&h=800&fit=crop"],t:["Travel","Nature","Photography"],v:1},
-{n:"Destiny",a:23,c:"Georgetown",g:"Woman",b:"UG business student & foodie. If you can cook, you already won me over.",p:"+5926001006",imgs:["https://images.unsplash.com/photo-1506795660198-e95c77602c14?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1523264653568-d3d4142aa3c2?w=600&h=800&fit=crop"],t:["Business","Food","Movies"],v:0},
-{n:"Reshma",a:26,c:"Anna Regina",g:"Woman",b:"Rice farmer's daughter with big city dreams. Soca is my therapy.",p:"+5926001007",imgs:["https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1499887142886-791eca5918cd?w=600&h=800&fit=crop"],t:["Soca","Agriculture","Dancing"],v:1},
-{n:"Anika",a:28,c:"Georgetown",g:"Woman",b:"Lawyer in training & gym lover. I work hard and play harder.",p:"+5926001009",imgs:["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519742866993-66d3cfef4bbd?w=600&h=800&fit=crop"],t:["Fitness","Law","Nightlife"],v:1},
-{n:"Marcus",a:26,c:"Georgetown",g:"Man",b:"Gym coach & cricket player. Looking for my match on and off the field.",p:"+5926001011",imgs:["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop"],t:["Cricket","Fitness","Music"],v:1},
-{n:"Devon",a:30,c:"Linden",g:"Man",b:"Mining engineer who knows how to have a good time. Weekends are for liming.",p:"+5926001012",imgs:["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&h=800&fit=crop"],t:["Engineering","Partying","Football"],v:1}
+{n:"Priya",a:27,c:"Georgetown",g:"Woman",b:"Software dev & cricket fanatic.",p:"+5926001002",imgs:["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"],t:["Cricket","Tech","Cooking"],v:1},
+{n:"Shantel",a:22,c:"Linden",g:"Woman",b:"Nursing student & karaoke lover.",p:"+5926001003",imgs:["https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1496440737103-cd596325d314?w=600&h=800&fit=crop"],t:["Music","Carnival","Fitness"],v:0},
+{n:"Anisa",a:25,c:"New Amsterdam",g:"Woman",b:"Teacher by day, artist by night.",p:"+5926001004",imgs:["https://images.unsplash.com/photo-1514315384763-ba401779410f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&h=800&fit=crop"],t:["Art","Teaching","Reading"],v:1},
+{n:"Camille",a:29,c:"Bartica",g:"Woman",b:"Adventure junkie & nature photographer.",p:"+5926001005",imgs:["https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=600&h=800&fit=crop"],t:["Travel","Nature","Photography"],v:1},
+{n:"Destiny",a:23,c:"Georgetown",g:"Woman",b:"UG business student & foodie.",p:"+5926001006",imgs:["https://images.unsplash.com/photo-1506795660198-e95c77602c14?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1523264653568-d3d4142aa3c2?w=600&h=800&fit=crop"],t:["Business","Food","Movies"],v:0},
+{n:"Reshma",a:26,c:"Anna Regina",g:"Woman",b:"Rice farmer's daughter with big dreams.",p:"+5926001007",imgs:["https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1499887142886-791eca5918cd?w=600&h=800&fit=crop"],t:["Soca","Agriculture","Dancing"],v:1},
+{n:"Anika",a:28,c:"Georgetown",g:"Woman",b:"Lawyer in training & gym lover.",p:"+5926001009",imgs:["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519742866993-66d3cfef4bbd?w=600&h=800&fit=crop"],t:["Fitness","Law","Nightlife"],v:1},
+{n:"Marcus",a:26,c:"Georgetown",g:"Man",b:"Gym coach & cricket player.",p:"+5926001011",imgs:["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop"],t:["Cricket","Fitness","Music"],v:1},
+{n:"Devon",a:30,c:"Linden",g:"Man",b:"Mining engineer who loves to party.",p:"+5926001012",imgs:["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&h=800&fit=crop"],t:["Engineering","Partying","Football"],v:1}
 ];
 
-// Render preset profiles
 var grid=document.getElementById('ppg');
 PROFILES.forEach(function(p,i){
-var w='https://wa.me/'+p.p.replace(/\D/g,'')+'?text=Hey%20'+p.n+'%20Found%20you%20on%20Flame!';
-var ch=buildCarousel(p.imgs,p.n);
-grid.innerHTML+='<div class="cd" data-name="'+p.n.toLowerCase()+'" data-city="'+p.c+'" data-gender="'+p.g+'" data-age="'+p.a+'" data-idx="preset-'+i+'" onclick="if(!event.target.closest(\'.carousel-btn\')&&!event.target.closest(\'.carousel-dots\'))openProfileView(\'preset\','+i+')" style="animation:fu .5s ease '+(i*.06)+'s both"><div class="cm">'+ch+'<div class="co"></div>'+(p.v?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.n+', '+p.a+'</div><div class="cl">📍 '+p.c+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 Guyanese</div><p class="bi">'+p.b+'</p><div class="it">'+p.t.map(function(x){return '<span class="ig">'+x+'</span>'}).join('')+'</div><div class="ca"><a href="'+w+'" target="_blank" class="wa" onclick="event.stopPropagation()">💬 WhatsApp</a><span class="gb" onclick="event.stopPropagation();openProfileView(\'preset\','+i+')">View Profile</span></div></div></div>';
-});
+var w='https://wa.me/'+p.p.replace(/\D/g,'')+'?text=Hey%20'+p.n+'%20Found%20you%20on%20Flame!';var ch=buildCarousel(p.imgs,p.n);
+grid.innerHTML+='<div class="cd" data-name="'+p.n.toLowerCase()+'" data-city="'+p.c+'" data-gender="'+p.g+'" data-age="'+p.a+'" onclick="if(!event.target.closest(\'.carousel-btn\')&&!event.target.closest(\'.carousel-dots\')&&!event.target.closest(\'.wa\'))openProfileView(\'preset\','+i+')" style="animation:fu .5s ease '+(i*.06)+'s both"><div class="cm">'+ch+'<div class="co"></div>'+(p.v?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.n+', '+p.a+'</div><div class="cl">📍 '+p.c+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 Guyanese</div><p class="bi">'+p.b+'</p><div class="it">'+p.t.map(function(x){return '<span class="ig">'+x+'</span>'}).join('')+'</div><div class="ca"><a href="'+w+'" target="_blank" class="wa" onclick="event.stopPropagation()">💬 WhatsApp</a><span class="gb" onclick="event.stopPropagation();openProfileView(\'preset\','+i+')">View Profile</span></div></div></div>'});
 
-// Load saved user profiles
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
 saved.forEach(function(p,i){addProfileCard(p,i)});
-filterProfiles();
+filterProfiles();updateNavState();
 </script>
 </body></html>
