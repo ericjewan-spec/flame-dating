@@ -120,11 +120,17 @@ function openSignup(){document.getElementById('signupModal').classList.add('open
 function closeSignup(){document.getElementById('signupModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('signupModal').addEventListener('click',function(e){if(e.target===this)closeSignup()});
 
+var SHEET_URL='https://script.google.com/macros/s/AKfycbwVU_bptRxuj2_9oBegbH83ITBVEiZ7Xk8Aexdl-5ROOnlD6KKWRYa8-dP23I2dx4ax/exec';
+
+function sendToSheet(prof){
+fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(prof)}).catch(function(err){console.log('Sheet sync error:',err)})}
+
 function submitProfile(){
 var n=document.getElementById('sf_name').value,p=document.getElementById('sf_phone').value,a=document.getElementById('sf_age').value;
 if(!n||!p){alert('Please enter your name and phone number');return}
 var prof={name:n,phone:p,age:a,gender:document.getElementById('sf_gender').value,nationality:document.getElementById('sf_nationality').value,city:document.getElementById('sf_city').value,rate:document.getElementById('sf_rate').value,bio:document.getElementById('sf_bio').value};
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');saved.push(prof);localStorage.setItem('flameProfiles',JSON.stringify(saved));
+sendToSheet(prof);
 addProfileCard(prof);
 document.getElementById('signupForm').style.display='none';document.getElementById('welcomeMsg').textContent=n+', your profile is now live! People can reach you on WhatsApp.';document.getElementById('signupSuccess').style.display='block'}
 
