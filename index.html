@@ -40,7 +40,7 @@
 .no-results span{font-size:48px;display:block;margin-bottom:16px}
 
 @media(max-width:768px){.hbt{flex-direction:column}.pg{grid-template-columns:1fr}.nb,.db{display:none}.sticky-cta{display:block}.filter-bar{flex-direction:column}.filter-bar input[type="text"],.filter-bar select{width:100%}}</style></head><body>
-<nav class="nv"><div class="ni"><a onclick="showPage('home')" class="lo">🔥 Flame <span class="gy">GY</span></a><div class="nl"><a onclick="showPage('home')" class="nb">Discover</a><a href="#donate" class="db">❤️ Donate</a><button onclick="openSignup()" class="sb">Sign Up Free</button></div></div></nav>
+<nav class="nv"><div class="ni"><a onclick="showPage('home')" class="lo">🔥 Flame <span class="gy">GY</span></a><div class="nl"><a onclick="showPage('home')" class="nb">Discover</a><a onclick="openLogin()" class="nb">👤 My Profile</a><a href="#donate" class="db">❤️ Donate</a><button onclick="openSignup()" class="sb">Sign Up Free</button></div></div></nav>
 
 <div id="homePage">
 <section class="hr"><div class="hg"></div><div class="hc"><div class="hb"><span class="hd"></span>🇬🇾 Guyanese singles are online now</div><h1>Find Your <span class="ac">Flame</span> in Guyana</h1><p class="hs">Real people from Georgetown to Lethem. Browse profiles, see photo galleries, and connect instantly via WhatsApp.</p><div class="hbt"><a onclick="showPage('home');document.getElementById('profiles').scrollIntoView({behavior:'smooth'})" class="bp">Browse Singles 🔥</a><button onclick="openSignup()" class="bs2">Create Your Profile</button></div><div class="st" id="statsSection"><div><div class="sn" data-target="500" data-suffix="+">0</div><div class="sl">Active Users</div></div><div><div class="sn" data-target="100" data-suffix="%">0</div><div class="sl">Guyanese</div></div><div><div class="sn" data-target="14" data-suffix="">0</div><div class="sl">Cities</div></div></div></div></section>
@@ -110,7 +110,6 @@
 <label>About You</label>
 <textarea id="sf_bio" placeholder="Tell people about yourself — hobbies, interests, what you're looking for..."></textarea>
 <button class="sbtn" onclick="submitProfile()">🔥 Create My Profile</button>
-<button class="wa-signup" onclick="submitViaWhatsApp()">💬 Sign Up via WhatsApp</button>
 <p style="text-align:center;font-size:11px;color:#444;margin-top:8px">100% free. No hidden fees. Your profile goes live immediately.</p>
 </div>
 </div>
@@ -123,12 +122,121 @@
 </div>
 </div>
 
+<!-- LOGIN MODAL -->
+<div class="overlay" id="loginModal">
+<div class="modal">
+<button class="modal-close" onclick="closeLogin()">✕</button>
+<div id="loginForm">
+<div style="text-align:center;margin-bottom:8px;font-size:36px">👤</div>
+<h2>My Profile</h2>
+<p class="sub">Log in with your phone number</p>
+<div class="frm">
+<label>Phone / WhatsApp Number</label>
+<input type="tel" id="login_phone" placeholder="+592 600 0000">
+<button class="sbtn" onclick="loginProfile()">🔓 Log In</button>
+<p style="text-align:center;font-size:12px;color:#555;margin-top:12px">Don't have a profile? <a style="color:var(--f);cursor:pointer" onclick="closeLogin();openSignup()">Sign up free</a></p>
+</div>
+</div>
+<div id="editForm" style="display:none">
+<div style="text-align:center;margin-bottom:8px;font-size:36px">✏️</div>
+<h2>Edit Profile</h2>
+<p class="sub">Update your information below</p>
+<div class="frm">
+<label>Your Name</label>
+<input type="text" id="ed_name">
+<label>Phone / WhatsApp</label>
+<input type="tel" id="ed_phone" disabled style="opacity:.6">
+<div style="display:flex;gap:12px">
+<div style="flex:1"><label>Age</label><input type="number" id="ed_age" min="18"></div>
+<div style="flex:1"><label>Gender</label><select id="ed_gender"><option value="">Select...</option><option>Woman</option><option>Man</option><option>Other</option></select></div>
+</div>
+<label>Nationality</label>
+<input type="text" id="ed_nationality">
+<label>City in Guyana</label>
+<select id="ed_city"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
+<label>Price Per Hour (GYD)</label>
+<input type="text" id="ed_rate">
+<label>About You</label>
+<textarea id="ed_bio"></textarea>
+<button class="sbtn" onclick="saveProfile()">💾 Save Changes</button>
+<button style="background:none;border:1px solid #333;color:#aaa;padding:14px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%;margin-top:4px" onclick="closeLogin()">Cancel</button>
+</div>
+</div>
+<div id="editSuccess" style="display:none" class="success">
+<div class="icon">✅</div>
+<h2 style="color:var(--f)">Profile Updated!</h2>
+<p>Your changes have been saved.</p>
+<button class="sbtn" onclick="closeLogin()" style="margin-top:24px">Done</button>
+</div>
+</div>
+</div>
+
 <script>
 function showPage(p){document.getElementById('homePage').style.display='block';window.scrollTo(0,0)}
 function openSignup(){document.getElementById('signupModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('signupForm').style.display='block';document.getElementById('signupSuccess').style.display='none'}
 function closeSignup(){document.getElementById('signupModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('signupModal').addEventListener('click',function(e){if(e.target===this)closeSignup()});
 
+// === LOGIN / EDIT PROFILE ===
+function openLogin(){document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('loginForm').style.display='block';document.getElementById('editForm').style.display='none';document.getElementById('editSuccess').style.display='none';document.getElementById('login_phone').value=''}
+function closeLogin(){document.getElementById('loginModal').classList.remove('open');document.body.style.overflow=''}
+document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===this)closeLogin()});
+
+var editingProfileIndex=-1;
+
+function loginProfile(){
+var phone=document.getElementById('login_phone').value.trim();
+if(!phone){alert('Please enter your phone number');return}
+var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
+var cleanPhone=phone.replace(/\D/g,'');
+var found=-1;
+for(var i=0;i<saved.length;i++){
+if(saved[i].phone.replace(/\D/g,'')===cleanPhone){found=i;break}
+}
+if(found===-1){alert('No profile found with this number. Try signing up first!');return}
+editingProfileIndex=found;
+var p=saved[found];
+document.getElementById('ed_name').value=p.name||'';
+document.getElementById('ed_phone').value=p.phone||'';
+document.getElementById('ed_age').value=p.age||'';
+document.getElementById('ed_gender').value=p.gender||'';
+document.getElementById('ed_nationality').value=p.nationality||'Guyanese';
+document.getElementById('ed_city').value=p.city||'Georgetown';
+document.getElementById('ed_rate').value=p.rate||'';
+document.getElementById('ed_bio').value=p.bio||'';
+document.getElementById('loginForm').style.display='none';
+document.getElementById('editForm').style.display='block';
+}
+
+function saveProfile(){
+var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
+if(editingProfileIndex<0||editingProfileIndex>=saved.length) return;
+saved[editingProfileIndex].name=document.getElementById('ed_name').value;
+saved[editingProfileIndex].age=document.getElementById('ed_age').value;
+saved[editingProfileIndex].gender=document.getElementById('ed_gender').value;
+saved[editingProfileIndex].nationality=document.getElementById('ed_nationality').value;
+saved[editingProfileIndex].city=document.getElementById('ed_city').value;
+saved[editingProfileIndex].rate=document.getElementById('ed_rate').value;
+saved[editingProfileIndex].bio=document.getElementById('ed_bio').value;
+localStorage.setItem('flameProfiles',JSON.stringify(saved));
+// Also send update to Google Sheets
+sendToSheet(Object.assign({},saved[editingProfileIndex],{update:true}));
+document.getElementById('editForm').style.display='none';
+document.getElementById('editSuccess').style.display='block';
+// Rebuild profile cards
+rebuildUserCards();
+}
+
+function rebuildUserCards(){
+// Remove old user cards and re-add
+var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');
+var cards=document.querySelectorAll('#ppg .cd.user-card');
+cards.forEach(function(c){c.remove()});
+saved.forEach(function(p){addProfileCard(p)});
+filterProfiles();
+}
+
+// === SHEET & SIGNUP ===
 var SHEET_URL='https://script.google.com/macros/s/AKfycbwVU_bptRxuj2_9oBegbH83ITBVEiZ7Xk8Aexdl-5ROOnlD6KKWRYa8-dP23I2dx4ax/exec';
 var selectedPhotos=[];
 var MAX_PHOTOS=5;
@@ -168,36 +276,27 @@ if(selectedPhotos.length===0) document.getElementById('photoCount').textContent=
 }
 
 function sendToSheet(prof){
-fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(prof)}).catch(function(err){console.log('Sheet sync error:',err)})}
+var payload=Object.assign({},prof);
+// Remove base64 photo data from the sheet payload to avoid size issues
+delete payload.photos;
+fetch(SHEET_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'}}).then(function(r){return r.text()}).then(function(t){console.log('Sheet response:',t)}).catch(function(err){console.log('Sheet sync error:',err)})}
 
 function submitProfile(){
 var n=document.getElementById('sf_name').value,p=document.getElementById('sf_phone').value,a=document.getElementById('sf_age').value;
 if(!n||!p){alert('Please enter your name and phone number');return}
 var prof={name:n,phone:p,age:a,gender:document.getElementById('sf_gender').value,nationality:document.getElementById('sf_nationality').value,city:document.getElementById('sf_city').value,rate:document.getElementById('sf_rate').value,bio:document.getElementById('sf_bio').value};
-// Add photos as base64 for Google Drive upload
-if(selectedPhotos.length>0){
-prof.photos=selectedPhotos.map(function(ph){
-return{base64:ph.dataUrl.split(',')[1],type:ph.type,ext:ph.ext};
-});
-}
 var saved=JSON.parse(localStorage.getItem('flameProfiles')||'[]');saved.push(prof);localStorage.setItem('flameProfiles',JSON.stringify(saved));
-// Show success immediately, send to sheet in background
 addProfileCard(prof);
 document.getElementById('signupForm').style.display='none';document.getElementById('welcomeMsg').textContent=n+', your profile is now live! People can reach you on WhatsApp.';document.getElementById('signupSuccess').style.display='block';
 sendToSheet(prof);
 selectedPhotos=[];
 }
 
-function submitViaWhatsApp(){
-var n=document.getElementById('sf_name').value||'',p=document.getElementById('sf_phone').value||'',a=document.getElementById('sf_age').value||'',nat=document.getElementById('sf_nationality').value||'',c=document.getElementById('sf_city').value||'',r=document.getElementById('sf_rate').value||'',b=document.getElementById('sf_bio').value||'';
-var msg='NEW FLAME PROFILE%0A%0AName: '+encodeURIComponent(n)+'%0APhone: '+encodeURIComponent(p)+'%0AAge: '+a+'%0ANationality: '+encodeURIComponent(nat)+'%0ACity: '+encodeURIComponent(c)+'%0ARate: '+encodeURIComponent(r)+'%0ABio: '+encodeURIComponent(b);
-window.open('https://wa.me/5926001000?text='+msg,'_blank')}
-
 function addProfileCard(p){
 var g=document.getElementById('ppg');
 var ph=p.phone.replace(/\D/g,'');
 var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
-var card=document.createElement('div');card.className='cd';card.style.animation='fu .5s ease both';
+var card=document.createElement('div');card.className='cd user-card';card.style.animation='fu .5s ease both';
 card.setAttribute('data-name',(p.name||'').toLowerCase());
 card.setAttribute('data-city',p.city||'Georgetown');
 card.setAttribute('data-gender',p.gender||'');
