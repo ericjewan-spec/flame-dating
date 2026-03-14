@@ -159,8 +159,6 @@
 <input type="text" id="sf_nationality" placeholder="e.g. Guyanese" value="Guyanese">
 <label>City</label>
 <select id="sf_city" aria-label="City"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
-<label>Rate Per Hour (GYD) — optional</label>
-<input type="text" id="sf_rate" placeholder="e.g. 5,000 or 'Free / Just vibes'">
 <div style="display:flex;gap:8px;margin-top:4px">
 <button style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:14px;border-radius:12px;cursor:pointer" onclick="goStep(1)">← Back</button>
 <button class="sbtn" style="flex:2" onclick="goStep(3)">Next →</button>
@@ -280,7 +278,6 @@
 <label>Nationality</label><input type="text" id="ed_nationality">
 <label>City</label>
 <select id="ed_city"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
-<label>Rate</label><input type="text" id="ed_rate">
 <label>Bio</label><textarea id="ed_bio"></textarea>
 <label>Location</label><input type="text" id="ed_location">
 <label>Website</label><input type="url" id="ed_website">
@@ -499,7 +496,7 @@ async function submitProfile(){
       p_gender:document.getElementById('sf_gender').value||null,
       p_nationality:document.getElementById('sf_nationality').value||'Guyanese',
       p_city:document.getElementById('sf_city').value||'Georgetown',
-      p_rate:document.getElementById('sf_rate').value||null,
+      p_rate:null,
       p_bio:document.getElementById('sf_bio').value||null,
       p_profile_type:document.getElementById('sf_profile_type').value||'personal',
       p_date_of_birth:document.getElementById('sf_dob').value||null,
@@ -575,7 +572,7 @@ async function showDashboard(){
   if(currentUser.avatar_url){document.getElementById('dashAvatar').innerHTML='<img src="'+currentUser.avatar_url+'" style="width:100%;height:100%;object-fit:cover">'}
   
   // Fill edit form
-  ['name','username','email','phone','age','gender','nationality','city','rate','bio','location','website','job_title','company'].forEach(function(f){
+  ['name','username','email','phone','age','gender','nationality','city','bio','location','website','job_title','company'].forEach(function(f){
     var el=document.getElementById('ed_'+f);
     if(el)el.value=currentUser[f]||'';
   });
@@ -637,7 +634,6 @@ async function saveProfile(){
     gender:document.getElementById('ed_gender').value||null,
     nationality:document.getElementById('ed_nationality').value,
     city:document.getElementById('ed_city').value,
-    rate:document.getElementById('ed_rate').value||null,
     bio:document.getElementById('ed_bio').value||null,
     location:document.getElementById('ed_location').value||null,
     website:document.getElementById('ed_website').value||null,
@@ -685,7 +681,7 @@ function openProfile(idx){
     photosEl.innerHTML=h;photosEl.setAttribute('data-index','0');photosEl.style.display='block';
   }else{photosEl.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:80px">🔥</div>';photosEl.style.display='block'}
   
-  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2><div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div><div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'</div><p class="pm-bio">'+(p.bio||'No bio yet.')+'</p><div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
+  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2><div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div><div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div></div><p class="pm-bio">'+(p.bio||'No bio yet.')+'</p><div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
   modal.classList.add('open');document.body.style.overflow='hidden';
 }
 function closeProfile(){document.getElementById('profileModal').classList.remove('open');document.body.style.overflow=''}
@@ -710,7 +706,7 @@ function renderCard(p,animate,idx){
   var ph=p.phone.replace(/\D/g,'');
   var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
   var carousel=buildCarousel(p.photos,p.name);
-  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'<p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
+  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div><p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
 }
 
 // === LOAD PROFILES ===
@@ -721,13 +717,13 @@ async function loadProfiles(){
   if(error){grid.innerHTML='<div style="text-align:center;padding:40px;color:#555;grid-column:1/-1">Error loading profiles</div>';return}
   
   var demoProfiles=[
-    {name:"Natasha",age:24,city:"Georgetown",gender:"Woman",bio:"Dancehall queen & pharmacy student",phone:"+5926001001",photos:["https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop"],verified:true,rate:"5,000",nationality:"Guyanese"},
-    {name:"Priya",age:27,city:"Georgetown",gender:"Woman",bio:"Software dev & cricket fanatic",phone:"+5926001002",photos:["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"],verified:true,rate:"8,000",nationality:"Guyanese"},
-    {name:"Shantel",age:22,city:"Linden",gender:"Woman",bio:"Nursing student & karaoke lover",phone:"+5926001003",photos:["https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop"],verified:false,rate:"3,000",nationality:"Guyanese"},
-    {name:"Camille",age:29,city:"Bartica",gender:"Woman",bio:"Adventure junkie & nature lover",phone:"+5926001005",photos:["https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&h=800&fit=crop"],verified:true,rate:"7,000",nationality:"Guyanese"},
-    {name:"Marcus",age:26,city:"Georgetown",gender:"Man",bio:"Gym coach & cricket player",phone:"+5926001011",photos:["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop"],verified:true,rate:"6,000",nationality:"Guyanese"},
-    {name:"Devon",age:30,city:"Linden",gender:"Man",bio:"Mining engineer who loves to party",phone:"+5926001012",photos:["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop"],verified:true,rate:"8,000",nationality:"Guyanese"},
-    {name:"Anika",age:28,city:"Georgetown",gender:"Woman",bio:"Lawyer in training & gym lover",phone:"+5926001009",photos:["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop"],verified:true,rate:"10,000",nationality:"Guyanese"}
+    {name:"Natasha",age:24,city:"Georgetown",gender:"Woman",bio:"Dancehall queen & pharmacy student",phone:"+5926001001",photos:["https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"},
+    {name:"Priya",age:27,city:"Georgetown",gender:"Woman",bio:"Software dev & cricket fanatic",phone:"+5926001002",photos:["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"},
+    {name:"Shantel",age:22,city:"Linden",gender:"Woman",bio:"Nursing student & karaoke lover",phone:"+5926001003",photos:["https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop"],verified:false,nationality:"Guyanese"},
+    {name:"Camille",age:29,city:"Bartica",gender:"Woman",bio:"Adventure junkie & nature lover",phone:"+5926001005",photos:["https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"},
+    {name:"Marcus",age:26,city:"Georgetown",gender:"Man",bio:"Gym coach & cricket player",phone:"+5926001011",photos:["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"},
+    {name:"Devon",age:30,city:"Linden",gender:"Man",bio:"Mining engineer who loves to party",phone:"+5926001012",photos:["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"},
+    {name:"Anika",age:28,city:"Georgetown",gender:"Woman",bio:"Lawyer in training & gym lover",phone:"+5926001009",photos:["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop"],verified:true,nationality:"Guyanese"}
   ];
   
   allProfilesData=[...data,...demoProfiles];
