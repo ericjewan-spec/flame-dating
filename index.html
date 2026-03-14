@@ -57,6 +57,9 @@
 /* === NO RESULTS === */
 .no-results{text-align:center;padding:60px 20px;color:#555;font-size:16px;display:none}
 .no-results span{font-size:48px;display:block;margin-bottom:16px}
+/* === STEP INDICATOR === */
+.step-dot{width:28px;height:28px;border-radius:50%;background:#1a1a1a;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555;transition:all .3s}
+.step-dot.active{background:var(--f);border-color:var(--f);color:#fff;font-weight:600}
 
 @media(max-width:768px){.hbt{flex-direction:column}.pg{grid-template-columns:1fr}.nb,.db{display:none}.nb.profile-link{display:inline-block}.sticky-cta{display:block}.filter-bar{flex-direction:column}.filter-bar input[type="text"],.filter-bar select{width:100%}}</style></head><body>
 <nav class="nv"><div class="ni"><a onclick="showPage('home')" class="lo">🔥 Flame <span class="gy">GY</span></a><div class="nl"><a onclick="showPage('home')" class="nb">Discover</a><a onclick="openLogin()" class="nb profile-link" style="cursor:pointer">👤 My Profile</a><a href="#donate" class="db">❤️ Donate</a><button onclick="openSignup()" class="sb">Sign Up Free</button></div></div></nav>
@@ -93,50 +96,125 @@
 </div>
 </div>
 
-<!-- SIGN UP MODAL -->
+<!-- SIGN UP MODAL (Multi-step) -->
 <div class="overlay" id="signupModal">
-<div class="modal" id="signupContent">
+<div class="modal" style="max-width:520px">
 <button class="modal-close" onclick="closeSignup()">✕</button>
 <div id="signupForm">
 <div style="text-align:center;margin-bottom:8px;font-size:36px">🔥</div>
 <h2>Create Your Profile</h2>
-<p class="sub">It's free — sign up with your phone number</p>
-<div class="frm">
-<label>Your Name</label>
-<input type="text" id="sf_name" placeholder="What should we call you?">
-<label>Phone / WhatsApp Number</label>
-<input type="tel" id="sf_phone" placeholder="+592 600 0000">
-<p style="font-size:11px;color:#555;margin-top:-8px">This is how people will contact you via WhatsApp</p>
+<p class="sub">Join the community — it's free</p>
+
+<!-- Step indicator -->
+<div id="stepIndicator" style="display:flex;justify-content:center;gap:8px;margin-bottom:20px">
+<span class="step-dot active" data-step="1">1</span>
+<span class="step-dot" data-step="2">2</span>
+<span class="step-dot" data-step="3">3</span>
+</div>
+
+<!-- STEP 1: Account -->
+<div id="step1" class="frm">
+<label>Full Name *</label>
+<input type="text" id="sf_name" placeholder="Your full name" required aria-label="Full name">
+<label>Username *</label>
+<input type="text" id="sf_username" placeholder="Choose a unique username" oninput="validateUsername(this)" aria-label="Username">
+<div id="usernameMsg" style="font-size:11px;color:#555;margin-top:-8px"></div>
+<label>Email Address *</label>
+<input type="email" id="sf_email" placeholder="you@email.com" aria-label="Email address">
+<label>Phone / WhatsApp *</label>
+<input type="tel" id="sf_phone" placeholder="+592 600 0000" aria-label="Phone number">
+<label>Password *</label>
+<div style="position:relative">
+<input type="password" id="sf_password" placeholder="Min 8 chars, upper, lower, number, special" oninput="checkPasswordStrength(this.value)" aria-label="Password">
+<span onclick="togglePw('sf_password',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:#666">👁</span>
+</div>
+<div id="pwStrength" style="height:4px;border-radius:2px;background:#2a2a2a;margin-top:-8px;overflow:hidden"><div id="pwBar" style="height:100%;width:0;transition:all .3s;border-radius:2px"></div></div>
+<div id="pwMsg" style="font-size:11px;color:#555;margin-top:-4px"></div>
+<label>Confirm Password *</label>
+<input type="password" id="sf_password2" placeholder="Re-enter password" aria-label="Confirm password">
+<button class="sbtn" onclick="goStep(2)">Next →</button>
+</div>
+
+<!-- STEP 2: Profile Details -->
+<div id="step2" class="frm" style="display:none">
 <div style="display:flex;gap:12px">
-<div style="flex:1"><label>Age</label><input type="number" id="sf_age" placeholder="18+" min="18"></div>
-<div style="flex:1"><label>Gender</label><select id="sf_gender"><option value="">Select...</option><option>Woman</option><option>Man</option><option>Other</option></select></div>
+<div style="flex:1"><label>Age *</label><input type="number" id="sf_age" placeholder="18+" min="18" aria-label="Age"></div>
+<div style="flex:1"><label>Gender *</label><select id="sf_gender" aria-label="Gender"><option value="">Select...</option><option>Woman</option><option>Man</option><option>Other</option></select></div>
+</div>
+<label>Date of Birth</label>
+<input type="date" id="sf_dob" aria-label="Date of birth">
+<label>Profile Type</label>
+<select id="sf_profile_type" onchange="toggleProfileFields()" aria-label="Profile type"><option value="personal">Personal</option><option value="professional">Professional</option><option value="community">Community</option></select>
+<div id="professionalFields" style="display:none">
+<label>Job Title</label>
+<input type="text" id="sf_job_title" placeholder="e.g. Software Developer">
+<label>Company</label>
+<input type="text" id="sf_company" placeholder="e.g. Guyana Tech Inc">
+</div>
+<div id="communityFields" style="display:none">
+<label>Interests / Hobbies (comma-separated)</label>
+<input type="text" id="sf_interests" placeholder="e.g. cricket, cooking, music">
 </div>
 <label>Nationality</label>
-<input type="text" id="sf_nationality" placeholder="e.g. Guyanese, Brazilian, Venezuelan..." value="Guyanese">
-<label>City in Guyana</label>
-<select id="sf_city"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
-<label>Price Per Hour (GYD)</label>
-<input type="text" id="sf_rate" placeholder="e.g. 5,000 — or 'Free / Just vibes'">
-<label>Your Photos (up to 5)</label>
-<div id="photoUploadArea" style="border:2px dashed #2a2a2a;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:border-color .3s;margin-bottom:4px" ondragover="event.preventDefault();this.style.borderColor='var(--f)'" ondragleave="this.style.borderColor='#2a2a2a'" ondrop="event.preventDefault();this.style.borderColor='#2a2a2a';handlePhotos(event.dataTransfer.files)" onclick="document.getElementById('sf_photos').click()">
-<div style="font-size:32px;margin-bottom:8px">📷</div>
-<div style="color:#888;font-size:14px">Drag & drop photos here or <span style="color:var(--f)">browse</span></div>
-<div style="color:#555;font-size:12px;margin-top:4px">JPG, PNG — max 5MB each</div>
+<input type="text" id="sf_nationality" placeholder="e.g. Guyanese" value="Guyanese">
+<label>City</label>
+<select id="sf_city" aria-label="City"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
+<label>Rate Per Hour (GYD) — optional</label>
+<input type="text" id="sf_rate" placeholder="e.g. 5,000 or 'Free / Just vibes'">
+<div style="display:flex;gap:8px;margin-top:4px">
+<button style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:14px;border-radius:12px;cursor:pointer" onclick="goStep(1)">← Back</button>
+<button class="sbtn" style="flex:2" onclick="goStep(3)">Next →</button>
+</div>
+</div>
+
+<!-- STEP 3: Photos & Bio -->
+<div id="step3" class="frm" style="display:none">
+<label>Profile Picture</label>
+<div id="avatarUploadArea" style="display:flex;align-items:center;gap:16px;margin-bottom:4px">
+<div id="avatarPreviewWrap" style="width:80px;height:80px;border-radius:50%;background:#1a1a1a;border:2px dashed #2a2a2a;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" onclick="document.getElementById('sf_avatar').click()">
+<span id="avatarPlaceholder" style="font-size:32px">📷</span>
+<img id="avatarImg" style="width:100%;height:100%;object-fit:cover;display:none">
+</div>
+<div style="font-size:13px;color:#666">Click to upload avatar<br>JPG, PNG, max 5MB</div>
+<input type="file" id="sf_avatar" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewAvatar(this)">
+</div>
+<label>Additional Photos (up to 5)</label>
+<div id="photoUploadArea" style="border:2px dashed #2a2a2a;border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:border-color .3s" ondragover="event.preventDefault();this.style.borderColor='var(--f)'" ondragleave="this.style.borderColor='#2a2a2a'" ondrop="event.preventDefault();this.style.borderColor='#2a2a2a';handlePhotos(event.dataTransfer.files)" onclick="document.getElementById('sf_photos').click()">
+<div style="color:#888;font-size:13px">Drag & drop or <span style="color:var(--f)">browse</span> — JPG, PNG, max 5MB each</div>
 <input type="file" id="sf_photos" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotos(this.files)">
 </div>
-<div id="photoPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
-<div id="photoCount" style="font-size:11px;color:#555;margin-bottom:4px"></div>
+<div id="photoPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"></div>
+<div id="photoCount" style="font-size:11px;color:#555"></div>
 <label>About You</label>
-<textarea id="sf_bio" placeholder="Tell people about yourself — hobbies, interests, what you're looking for..."></textarea>
-<button class="sbtn" onclick="submitProfile()">🔥 Create My Profile</button>
-<p style="text-align:center;font-size:11px;color:#444;margin-top:8px">100% free. No hidden fees. Your profile goes live immediately.</p>
+<textarea id="sf_bio" placeholder="Tell people about yourself..." aria-label="Bio"></textarea>
+<label>Location (optional)</label>
+<input type="text" id="sf_location" placeholder="e.g. East Coast Demerara">
+<label>Website (optional)</label>
+<input type="url" id="sf_website" placeholder="https://yoursite.com">
+
+<!-- Terms & conditions -->
+<div style="margin-top:8px">
+<label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:#888;cursor:pointer">
+<input type="checkbox" id="sf_terms" style="width:18px;height:18px;margin-top:2px;accent-color:var(--f)"> I agree to the <a href="#" style="color:var(--f)">Terms of Service</a> and <a href="#" style="color:var(--f)">Privacy Policy</a> *
+</label>
+<label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:#888;cursor:pointer;margin-top:8px">
+<input type="checkbox" id="sf_newsletter" style="width:18px;height:18px;margin-top:2px;accent-color:var(--f)"> Subscribe to our newsletter
+</label>
+</div>
+<div id="signupError" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center;margin-top:4px"></div>
+<div style="display:flex;gap:8px;margin-top:4px">
+<button style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:14px;border-radius:12px;cursor:pointer" onclick="goStep(2)">← Back</button>
+<button class="sbtn" style="flex:2" id="signupBtn" onclick="submitProfile()">🔥 Create My Profile</button>
 </div>
 </div>
+</div>
+
 <div id="signupSuccess" style="display:none" class="success">
 <div class="icon">🔥</div>
-<h2>Welcome to Flame!</h2>
-<p id="welcomeMsg">Your profile is live. People can now find you and reach out on WhatsApp.</p>
-<button class="sbtn" onclick="closeSignup()" style="margin-top:24px">Start Browsing</button>
+<h2>Welcome!</h2>
+<p id="welcomeMsg">Your profile is now live.</p>
+<button class="sbtn" onclick="closeSignup();openLogin()" style="margin-top:16px">Go to My Dashboard</button>
+<button style="background:none;border:1px solid #333;color:#aaa;padding:12px;border-radius:12px;font-size:14px;cursor:pointer;width:100%;margin-top:8px" onclick="closeSignup()">Browse Profiles</button>
 </div>
 </div>
 </div>
@@ -150,52 +228,96 @@
 </div>
 </div>
 
-<!-- LOGIN MODAL -->
+<!-- LOGIN + DASHBOARD MODAL -->
 <div class="overlay" id="loginModal">
-<div class="modal">
+<div class="modal" style="max-width:520px">
 <button class="modal-close" onclick="closeLogin()">✕</button>
+
+<!-- Login form -->
 <div id="loginForm">
 <div style="text-align:center;margin-bottom:8px;font-size:36px">👤</div>
-<h2>My Profile</h2>
-<p class="sub">Log in with your phone number</p>
+<h2>Log In</h2>
+<p class="sub">Enter your phone and password</p>
 <div class="frm">
-<label>Phone / WhatsApp Number</label>
-<input type="tel" id="login_phone" placeholder="+592 600 0000">
-<button class="sbtn" onclick="loginProfile()">🔓 Log In</button>
+<label>Phone / WhatsApp</label>
+<input type="tel" id="login_phone" placeholder="+592 600 0000" aria-label="Phone number">
+<label>Password</label>
+<div style="position:relative">
+<input type="password" id="login_password" placeholder="Your password" aria-label="Password">
+<span onclick="togglePw('login_password',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:#666">👁</span>
+</div>
+<div id="loginError" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center"></div>
+<button class="sbtn" id="loginBtn" onclick="loginProfile()">🔓 Log In</button>
 <p style="text-align:center;font-size:12px;color:#555;margin-top:12px">Don't have a profile? <a style="color:var(--f);cursor:pointer" onclick="closeLogin();openSignup()">Sign up free</a></p>
 </div>
 </div>
-<div id="editForm" style="display:none">
-<div style="text-align:center;margin-bottom:8px;font-size:36px">✏️</div>
-<h2>Edit Profile</h2>
-<p class="sub">Update your information below</p>
-<div class="frm">
-<label>Your Name</label>
-<input type="text" id="ed_name">
-<label>Phone / WhatsApp</label>
-<input type="tel" id="ed_phone" disabled style="opacity:.6">
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none">
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+<div id="dashAvatar" style="width:64px;height:64px;border-radius:50%;background:#1a1a1a;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:28px">🔥</span></div>
+<div>
+<h2 style="font-size:22px;margin-bottom:2px" id="dashName">User</h2>
+<p style="color:#888;font-size:13px" id="dashMeta">Personal profile</p>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:20px">
+<button class="sbtn" style="flex:1;font-size:13px;padding:12px" onclick="showDashView('edit')">✏️ Edit Profile</button>
+<button style="flex:1;background:var(--wa);border:none;color:#fff;padding:12px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer" onclick="showDashView('photos')">📷 Photos</button>
+<button style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#aaa;padding:12px;border-radius:12px;font-size:13px;cursor:pointer" onclick="logoutProfile()">🚪 Logout</button>
+</div>
+
+<!-- Edit form -->
+<div id="dashEdit" class="frm" style="display:none">
+<label>Name</label><input type="text" id="ed_name">
+<label>Username</label><input type="text" id="ed_username">
+<label>Email</label><input type="email" id="ed_email">
+<label>Phone</label><input type="tel" id="ed_phone" disabled style="opacity:.6">
 <div style="display:flex;gap:12px">
 <div style="flex:1"><label>Age</label><input type="number" id="ed_age" min="18"></div>
 <div style="flex:1"><label>Gender</label><select id="ed_gender"><option value="">Select...</option><option>Woman</option><option>Man</option><option>Other</option></select></div>
 </div>
-<label>Nationality</label>
-<input type="text" id="ed_nationality">
-<label>City in Guyana</label>
+<label>Nationality</label><input type="text" id="ed_nationality">
+<label>City</label>
 <select id="ed_city"><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
-<label>Price Per Hour (GYD)</label>
-<input type="text" id="ed_rate">
-<label>About You</label>
-<textarea id="ed_bio"></textarea>
+<label>Rate</label><input type="text" id="ed_rate">
+<label>Bio</label><textarea id="ed_bio"></textarea>
+<label>Location</label><input type="text" id="ed_location">
+<label>Website</label><input type="url" id="ed_website">
+<label>Job Title</label><input type="text" id="ed_job_title">
+<label>Company</label><input type="text" id="ed_company">
+<div id="editMsg" style="display:none;padding:12px;border-radius:10px;font-size:13px;text-align:center;margin-top:4px"></div>
 <button class="sbtn" onclick="saveProfile()">💾 Save Changes</button>
-<button style="background:none;border:1px solid #333;color:#aaa;padding:14px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%;margin-top:4px" onclick="closeLogin()">Cancel</button>
+<button style="background:none;border:1px solid rgba(255,59,48,.3);color:#ff6b6b;padding:12px;border-radius:12px;font-size:13px;cursor:pointer;width:100%;margin-top:8px" onclick="confirmDeleteAccount()">🗑️ Delete My Account</button>
+</div>
+
+<!-- Photos management -->
+<div id="dashPhotos" style="display:none">
+<p style="color:#888;font-size:13px;margin-bottom:12px">Your uploaded photos appear on your profile card.</p>
+<div id="dashPhotoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"></div>
+<div style="border:2px dashed #2a2a2a;border-radius:12px;padding:16px;text-align:center;cursor:pointer" onclick="document.getElementById('dashPhotoInput').click()">
+<div style="color:#888;font-size:13px">+ Add photos</div>
+<input type="file" id="dashPhotoInput" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadDashPhotos(this.files)">
+</div>
+<div id="dashPhotoMsg" style="font-size:12px;color:#555;margin-top:8px;text-align:center"></div>
+</div>
+
+<!-- Profile overview (default) -->
+<div id="dashOverview">
+<div style="background:#141414;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px">
+<h3 style="font-size:16px;margin-bottom:12px;color:var(--f)">Profile Summary</h3>
+<div id="dashSummary" style="font-size:14px;color:#aaa;line-height:1.8"></div>
 </div>
 </div>
-<div id="editSuccess" style="display:none" class="success">
-<div class="icon">✅</div>
-<h2 style="color:var(--f)">Profile Updated!</h2>
-<p>Your changes have been saved.</p>
-<button class="sbtn" onclick="closeLogin()" style="margin-top:24px">Done</button>
 </div>
+</div>
+</div>
+
+<!-- STICKY MOBILE CTA -->
+<div class="sticky-cta" id="stickyCta">
+<div class="sticky-cta-inner">
+<div class="sticky-text"><strong>🔥 Join 500+ singles</strong>Create your free profile now</div>
+<button class="sticky-btn" onclick="openSignup()">Sign Up Free</button>
 </div>
 </div>
 
@@ -208,81 +330,124 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const TABLE='dating_profiles';
 const BUCKET='profile-photos';
 
-// === PAGE NAVIGATION ===
+// === SESSION STATE ===
+var currentUser=null;
+var allProfilesData=[];
+var selectedPhotos=[];
+var avatarFile=null;
+
+// === NAVIGATION ===
 function showPage(p){document.getElementById('homePage').style.display='block';window.scrollTo(0,0)}
-function openSignup(){document.getElementById('signupModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('signupForm').style.display='block';document.getElementById('signupSuccess').style.display='none';selectedPhotos=[]}
+function openSignup(){document.getElementById('signupModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('signupForm').style.display='block';document.getElementById('signupSuccess').style.display='none';goStep(1);selectedPhotos=[];avatarFile=null}
 function closeSignup(){document.getElementById('signupModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('signupModal').addEventListener('click',function(e){if(e.target===this)closeSignup()});
 
-// === LOGIN / EDIT PROFILE ===
-function openLogin(){document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';document.getElementById('loginForm').style.display='block';document.getElementById('editForm').style.display='none';document.getElementById('editSuccess').style.display='none';document.getElementById('login_phone').value=''}
+function openLogin(){
+  document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';
+  if(currentUser){showDashboard()}else{document.getElementById('loginForm').style.display='block';document.getElementById('dashboard').style.display='none'}
+}
 function closeLogin(){document.getElementById('loginModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===this)closeLogin()});
 
-var editingProfileId=null;
-
-async function loginProfile(){
-  var phone=document.getElementById('login_phone').value.trim();
-  if(!phone){alert('Please enter your phone number');return}
-  var cleanPhone=phone.replace(/[\s\-()]/g,'');
-  if(!cleanPhone.startsWith('+'))cleanPhone='+592'+cleanPhone;
-  
-  var{data,error}=await sb.from(TABLE).select('*').eq('phone',cleanPhone).maybeSingle();
-  if(error||!data){alert('No profile found with this number. Try signing up first!');return}
-  
-  editingProfileId=data.id;
-  document.getElementById('ed_name').value=data.name||'';
-  document.getElementById('ed_phone').value=data.phone||'';
-  document.getElementById('ed_age').value=data.age||'';
-  document.getElementById('ed_gender').value=data.gender||'';
-  document.getElementById('ed_nationality').value=data.nationality||'Guyanese';
-  document.getElementById('ed_city').value=data.city||'Georgetown';
-  document.getElementById('ed_rate').value=data.rate||'';
-  document.getElementById('ed_bio').value=data.bio||'';
-  document.getElementById('loginForm').style.display='none';
-  document.getElementById('editForm').style.display='block';
+// === MULTI-STEP FORM ===
+function goStep(n){
+  if(n===2&&!validateStep1())return;
+  if(n===3&&!validateStep2())return;
+  for(var i=1;i<=3;i++){
+    var el=document.getElementById('step'+i);if(el)el.style.display=i===n?'flex':'none';
+    var dot=document.querySelector('.step-dot[data-step="'+i+'"]');
+    if(dot){dot.classList.toggle('active',i<=n)}
+  }
+}
+function validateStep1(){
+  var n=document.getElementById('sf_name').value.trim();
+  var u=document.getElementById('sf_username').value.trim();
+  var e=document.getElementById('sf_email').value.trim();
+  var p=document.getElementById('sf_phone').value.trim();
+  var pw=document.getElementById('sf_password').value;
+  var pw2=document.getElementById('sf_password2').value;
+  if(!n){alert('Please enter your name');return false}
+  if(!u||!/^[a-zA-Z0-9_]{3,20}$/.test(u)){alert('Username must be 3-20 alphanumeric characters');return false}
+  if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){alert('Please enter a valid email');return false}
+  if(!p){alert('Please enter your phone number');return false}
+  if(pw.length<8){alert('Password must be at least 8 characters');return false}
+  if(!/[A-Z]/.test(pw)||!/[a-z]/.test(pw)||!/[0-9]/.test(pw)||!/[^A-Za-z0-9]/.test(pw)){alert('Password needs uppercase, lowercase, number, and special character');return false}
+  if(pw!==pw2){alert('Passwords do not match');return false}
+  return true;
+}
+function validateStep2(){
+  var a=document.getElementById('sf_age').value;
+  var g=document.getElementById('sf_gender').value;
+  if(!a||parseInt(a)<18){alert('You must be 18 or older');return false}
+  if(!g){alert('Please select your gender');return false}
+  return true;
 }
 
-async function saveProfile(){
-  if(!editingProfileId)return;
-  var updates={
-    name:document.getElementById('ed_name').value,
-    age:parseInt(document.getElementById('ed_age').value)||null,
-    gender:document.getElementById('ed_gender').value,
-    nationality:document.getElementById('ed_nationality').value,
-    city:document.getElementById('ed_city').value,
-    rate:document.getElementById('ed_rate').value,
-    bio:document.getElementById('ed_bio').value
+// === PASSWORD STRENGTH ===
+function checkPasswordStrength(pw){
+  var score=0,msg='',color='#ff3b30';
+  if(pw.length>=8)score++;if(pw.length>=12)score++;
+  if(/[A-Z]/.test(pw))score++;if(/[a-z]/.test(pw))score++;
+  if(/[0-9]/.test(pw))score++;if(/[^A-Za-z0-9]/.test(pw))score++;
+  if(score<=2){msg='Weak';color='#ff3b30'}
+  else if(score<=4){msg='Fair';color='#ff9500'}
+  else{msg='Strong';color='#4ade80'}
+  document.getElementById('pwBar').style.width=(score/6*100)+'%';
+  document.getElementById('pwBar').style.background=color;
+  document.getElementById('pwMsg').textContent=pw.length>0?msg:'';
+  document.getElementById('pwMsg').style.color=color;
+}
+
+function togglePw(id,el){var inp=document.getElementById(id);inp.type=inp.type==='password'?'text':'password';el.textContent=inp.type==='password'?'👁':'🔒'}
+
+async function validateUsername(inp){
+  var v=inp.value.trim(),msg=document.getElementById('usernameMsg');
+  if(!v){msg.textContent='';return}
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(v)){msg.textContent='3-20 chars, letters/numbers/underscore only';msg.style.color='#ff6b6b';return}
+  var{data}=await sb.from(TABLE).select('id').eq('username',v).maybeSingle();
+  if(data){msg.textContent='Username taken';msg.style.color='#ff6b6b'}
+  else{msg.textContent='Available ✓';msg.style.color='#4ade80'}
+}
+
+function toggleProfileFields(){
+  var t=document.getElementById('sf_profile_type').value;
+  document.getElementById('professionalFields').style.display=t==='professional'?'block':'none';
+  document.getElementById('communityFields').style.display=t==='community'?'block':'none';
+}
+
+// === AVATAR PREVIEW ===
+function previewAvatar(inp){
+  if(!inp.files[0])return;
+  var file=inp.files[0];
+  if(file.size>5*1024*1024){alert('Image too large (max 5MB)');return}
+  avatarFile=file;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    document.getElementById('avatarImg').src=e.target.result;
+    document.getElementById('avatarImg').style.display='block';
+    document.getElementById('avatarPlaceholder').style.display='none';
   };
-  var{error}=await sb.from(TABLE).update(updates).eq('id',editingProfileId);
-  if(error){alert('Error saving: '+error.message);return}
-  document.getElementById('editForm').style.display='none';
-  document.getElementById('editSuccess').style.display='block';
-  loadProfiles();
+  reader.readAsDataURL(file);
 }
 
 // === PHOTO HANDLING ===
-var selectedPhotos=[];
 var MAX_PHOTOS=5;
-
 function handlePhotos(files){
   var remaining=MAX_PHOTOS-selectedPhotos.length;
-  if(remaining<=0){alert('Maximum 5 photos allowed');return}
+  if(remaining<=0){alert('Maximum 5 photos');return}
   Array.from(files).slice(0,remaining).forEach(function(file){
-    if(file.size>5*1024*1024){alert(file.name+' is too large (max 5MB)');return}
-    if(!file.type.match(/image\/(jpeg|png|webp)/)){alert(file.name+' is not a supported format');return}
+    if(file.size>5*1024*1024){alert(file.name+' too large');return}
+    if(!file.type.match(/image\/(jpeg|png|webp)/)){alert(file.name+' not supported');return}
     var reader=new FileReader();
     reader.onload=function(e){selectedPhotos.push({dataUrl:e.target.result,file:file});renderPhotoPreviews()};
     reader.readAsDataURL(file);
   });
 }
-
 function renderPhotoPreviews(){
   var c=document.getElementById('photoPreview');c.innerHTML='';
   selectedPhotos.forEach(function(p,i){
-    var d=document.createElement('div');
-    d.style.cssText='position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid #2a2a2a';
-    d.innerHTML='<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover"><div onclick="removePhoto('+i+')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#fff">✕</div>';
+    var d=document.createElement('div');d.style.cssText='position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a';
+    d.innerHTML='<img src="'+p.dataUrl+'" style="width:100%;height:100%;object-fit:cover"><div onclick="removePhoto('+i+')" style="position:absolute;top:2px;right:2px;width:18px;height:18px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#fff">✕</div>';
     c.appendChild(d);
   });
   document.getElementById('photoCount').textContent=selectedPhotos.length>0?selectedPhotos.length+'/'+MAX_PHOTOS+' photos':'';
@@ -296,86 +461,212 @@ async function uploadPhotos(profileId){
     var ext=file.name.split('.').pop();
     var path=profileId+'/'+Date.now()+'_'+i+'.'+ext;
     var{error}=await sb.storage.from(BUCKET).upload(path,file,{cacheControl:'3600',upsert:false});
-    if(!error){
-      var{data}=sb.storage.from(BUCKET).getPublicUrl(path);
-      urls.push(data.publicUrl);
-    }
+    if(!error){var{data}=sb.storage.from(BUCKET).getPublicUrl(path);urls.push(data.publicUrl)}
   }
   return urls;
 }
 
+async function uploadAvatar(profileId){
+  if(!avatarFile)return null;
+  var ext=avatarFile.name.split('.').pop();
+  var path=profileId+'/avatar.'+ext;
+  var{error}=await sb.storage.from(BUCKET).upload(path,avatarFile,{cacheControl:'3600',upsert:true});
+  if(!error){var{data}=sb.storage.from(BUCKET).getPublicUrl(path);return data.publicUrl}
+  return null;
+}
+
 // === SIGNUP ===
 async function submitProfile(){
-  var n=document.getElementById('sf_name').value.trim();
-  var p=document.getElementById('sf_phone').value.trim();
-  var a=parseInt(document.getElementById('sf_age').value)||null;
-  if(!n||!p){alert('Please enter your name and phone number');return}
-  
-  var cleanPhone=p.replace(/[\s\-()]/g,'');
-  if(!cleanPhone.startsWith('+'))cleanPhone='+592'+cleanPhone;
-  
-  // Show loading state
-  var btn=document.querySelector('#signupForm .sbtn');
+  if(!document.getElementById('sf_terms').checked){alert('Please accept the Terms of Service');return}
+  var btn=document.getElementById('signupBtn');
   btn.textContent='Creating profile...';btn.disabled=true;
+  var errEl=document.getElementById('signupError');errEl.style.display='none';
   
-  var prof={name:n,phone:cleanPhone,age:a,gender:document.getElementById('sf_gender').value||null,nationality:document.getElementById('sf_nationality').value,city:document.getElementById('sf_city').value,rate:document.getElementById('sf_rate').value||null,bio:document.getElementById('sf_bio').value||null};
+  var phone=document.getElementById('sf_phone').value.trim().replace(/[\s\-()]/g,'');
+  if(!phone.startsWith('+'))phone='+592'+phone;
   
-  var{data,error}=await sb.from(TABLE).insert(prof).select().single();
-  if(error){
-    btn.textContent='🔥 Create My Profile';btn.disabled=false;
-    if(error.code==='23505'){alert('A profile with this phone number already exists. Try logging in instead!')}
-    else{alert('Error: '+error.message)}
-    return;
-  }
+  var interests=document.getElementById('sf_interests')?document.getElementById('sf_interests').value.split(',').map(function(s){return s.trim()}).filter(Boolean):[];
   
-  // Upload photos if any
-  if(selectedPhotos.length>0&&data){
-    var photoUrls=await uploadPhotos(data.id);
-    if(photoUrls.length>0){
-      await sb.from(TABLE).update({photos:photoUrls}).eq('id',data.id);
+  try{
+    // Use the secure server-side signup function (hashes password in DB)
+    var{data,error}=await sb.rpc('signup_user',{
+      p_name:document.getElementById('sf_name').value.trim(),
+      p_phone:phone,
+      p_email:document.getElementById('sf_email').value.trim(),
+      p_password:document.getElementById('sf_password').value,
+      p_username:document.getElementById('sf_username').value.trim(),
+      p_age:parseInt(document.getElementById('sf_age').value)||null,
+      p_gender:document.getElementById('sf_gender').value||null,
+      p_nationality:document.getElementById('sf_nationality').value||'Guyanese',
+      p_city:document.getElementById('sf_city').value||'Georgetown',
+      p_rate:document.getElementById('sf_rate').value||null,
+      p_bio:document.getElementById('sf_bio').value||null,
+      p_profile_type:document.getElementById('sf_profile_type').value||'personal',
+      p_date_of_birth:document.getElementById('sf_dob').value||null,
+      p_location:document.getElementById('sf_location').value||null,
+      p_website:document.getElementById('sf_website').value||null,
+      p_job_title:document.getElementById('sf_job_title')?document.getElementById('sf_job_title').value:null,
+      p_company:document.getElementById('sf_company')?document.getElementById('sf_company').value:null,
+      p_interests:interests,
+      p_terms_accepted:true,
+      p_newsletter:document.getElementById('sf_newsletter').checked
+    });
+    
+    if(error)throw error;
+    if(data&&data.error){errEl.textContent=data.error;errEl.style.display='block';btn.textContent='🔥 Create My Profile';btn.disabled=false;return}
+    
+    // Upload avatar & photos
+    if(data&&data.id){
+      var avatarUrl=await uploadAvatar(data.id);
+      var photoUrls=await uploadPhotos(data.id);
+      var updates={};
+      if(avatarUrl)updates.avatar_url=avatarUrl;
+      if(photoUrls.length>0)updates.photos=photoUrls;
+      if(Object.keys(updates).length>0)await sb.from(TABLE).update(updates).eq('id',data.id);
     }
+    
+    btn.textContent='🔥 Create My Profile';btn.disabled=false;
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('welcomeMsg').textContent=(data.name||'User')+', your profile is now live!';
+    document.getElementById('signupSuccess').style.display='block';
+    selectedPhotos=[];avatarFile=null;
+    loadProfiles();
+  }catch(e){
+    errEl.textContent=e.message||'Something went wrong';errEl.style.display='block';
+    btn.textContent='🔥 Create My Profile';btn.disabled=false;
   }
+}
+
+// === LOGIN ===
+async function loginProfile(){
+  var phone=document.getElementById('login_phone').value.trim().replace(/[\s\-()]/g,'');
+  var pw=document.getElementById('login_password').value;
+  var errEl=document.getElementById('loginError');errEl.style.display='none';
+  if(!phone||!pw){alert('Enter phone and password');return}
+  if(!phone.startsWith('+'))phone='+592'+phone;
   
-  btn.textContent='🔥 Create My Profile';btn.disabled=false;
-  document.getElementById('signupForm').style.display='none';
-  document.getElementById('welcomeMsg').textContent=n+', your profile is now live! People can reach you on WhatsApp.';
-  document.getElementById('signupSuccess').style.display='block';
-  selectedPhotos=[];
-  loadProfiles();
+  var btn=document.getElementById('loginBtn');btn.textContent='Logging in...';btn.disabled=true;
+  
+  try{
+    var{data,error}=await sb.rpc('verify_password',{input_phone:phone,input_password:pw});
+    if(error)throw error;
+    if(!data||data.length===0){errEl.textContent='Invalid phone or password';errEl.style.display='block';btn.textContent='🔓 Log In';btn.disabled=false;return}
+    
+    // Fetch full profile
+    var{data:profile}=await sb.from(TABLE).select('*').eq('id',data[0].id).single();
+    currentUser=profile;
+    localStorage.setItem('flame_session',JSON.stringify({id:profile.id,phone:profile.phone}));
+    btn.textContent='🔓 Log In';btn.disabled=false;
+    showDashboard();
+  }catch(e){
+    errEl.textContent=e.message||'Login failed';errEl.style.display='block';
+    btn.textContent='🔓 Log In';btn.disabled=false;
+  }
 }
 
-// === RENDER PROFILE CARDS ===
-function buildCarousel(images,name){
-  if(!images||images.length===0)return '<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:64px">🔥</div>';
-  if(images.length===1)return '<img src="'+images[0]+'" alt="'+name+'" loading="lazy">';
-  var h='<div class="carousel-wrap" data-index="0">';
-  images.forEach(function(img,i){h+='<img src="'+img+'" alt="'+name+'" loading="lazy" class="'+(i===0?'active':'')+'">'});
-  h+='</div><button class="carousel-btn prev" onclick="carouselNav(this,-1)">‹</button><button class="carousel-btn next" onclick="carouselNav(this,1)">›</button><div class="carousel-dots">';
-  images.forEach(function(_,i){h+='<span class="'+(i===0?'active':'')+'" onclick="carouselGo(this,'+i+')"></span>'});
-  return h+'</div>';
+function logoutProfile(){currentUser=null;localStorage.removeItem('flame_session');closeLogin()}
+
+async function showDashboard(){
+  if(!currentUser)return;
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('dashName').textContent=currentUser.name;
+  document.getElementById('dashMeta').textContent=(currentUser.profile_type||'Personal')+' • '+currentUser.city;
+  if(currentUser.avatar_url){document.getElementById('dashAvatar').innerHTML='<img src="'+currentUser.avatar_url+'" style="width:100%;height:100%;object-fit:cover">'}
+  
+  // Fill edit form
+  ['name','username','email','phone','age','gender','nationality','city','rate','bio','location','website','job_title','company'].forEach(function(f){
+    var el=document.getElementById('ed_'+f);
+    if(el)el.value=currentUser[f]||'';
+  });
+  
+  // Summary
+  var s='<div>📛 <strong>'+currentUser.name+'</strong></div>';
+  if(currentUser.username)s+='<div>@'+currentUser.username+'</div>';
+  if(currentUser.email)s+='<div>📧 '+currentUser.email+'</div>';
+  s+='<div>📱 '+currentUser.phone+'</div>';
+  if(currentUser.city)s+='<div>📍 '+currentUser.city+', Guyana</div>';
+  if(currentUser.bio)s+='<div style="margin-top:8px;color:#ccc">'+currentUser.bio+'</div>';
+  document.getElementById('dashSummary').innerHTML=s;
+  
+  // Photos grid
+  renderDashPhotos();
+  showDashView('overview');
 }
 
-function carouselNav(btn,dir){
-  var cm=btn.closest('.cm'),wrap=cm.querySelector('.carousel-wrap'),imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');
-  var idx=(parseInt(wrap.getAttribute('data-index'))+dir+imgs.length)%imgs.length;
-  wrap.setAttribute('data-index',idx);
-  imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});
-  dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx)});
-}
-function carouselGo(dot,idx){
-  var cm=dot.closest('.cm'),wrap=cm.querySelector('.carousel-wrap'),imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');
-  wrap.setAttribute('data-index',idx);
-  imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});
-  dots.forEach(function(d,i){d.classList.toggle('active',i===idx)});
+function showDashView(view){
+  ['dashEdit','dashPhotos','dashOverview'].forEach(function(id){document.getElementById(id).style.display='none'});
+  if(view==='edit')document.getElementById('dashEdit').style.display='flex';
+  else if(view==='photos')document.getElementById('dashPhotos').style.display='block';
+  else document.getElementById('dashOverview').style.display='block';
 }
 
-var allProfilesData=[];
+function renderDashPhotos(){
+  var grid=document.getElementById('dashPhotoGrid');grid.innerHTML='';
+  if(!currentUser||!currentUser.photos||currentUser.photos.length===0){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#555;padding:20px">No photos yet</div>';return}
+  currentUser.photos.forEach(function(url,i){
+    grid.innerHTML+='<div style="position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden"><img src="'+url+'" style="width:100%;height:100%;object-fit:cover"></div>';
+  });
+}
 
-function renderCard(p,animate,idx){
-  var ph=p.phone.replace(/\D/g,'');
-  var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
-  var carousel=buildCarousel(p.photos,p.name);
-  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'<p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
+async function uploadDashPhotos(files){
+  if(!currentUser)return;
+  var msg=document.getElementById('dashPhotoMsg');msg.textContent='Uploading...';
+  var urls=currentUser.photos||[];
+  for(var i=0;i<files.length&&urls.length<5;i++){
+    var file=files[i];
+    if(file.size>5*1024*1024||!file.type.match(/image/))continue;
+    var path=currentUser.id+'/'+Date.now()+'_'+i+'.'+file.name.split('.').pop();
+    var{error}=await sb.storage.from(BUCKET).upload(path,file,{cacheControl:'3600',upsert:false});
+    if(!error){var{data}=sb.storage.from(BUCKET).getPublicUrl(path);urls.push(data.publicUrl)}
+  }
+  await sb.from(TABLE).update({photos:urls}).eq('id',currentUser.id);
+  currentUser.photos=urls;
+  renderDashPhotos();
+  msg.textContent='Photos updated!';setTimeout(function(){msg.textContent=''},3000);
+}
+
+async function saveProfile(){
+  if(!currentUser)return;
+  var msgEl=document.getElementById('editMsg');
+  var updates={
+    name:document.getElementById('ed_name').value,
+    username:document.getElementById('ed_username').value||null,
+    email:document.getElementById('ed_email').value||null,
+    age:parseInt(document.getElementById('ed_age').value)||null,
+    gender:document.getElementById('ed_gender').value||null,
+    nationality:document.getElementById('ed_nationality').value,
+    city:document.getElementById('ed_city').value,
+    rate:document.getElementById('ed_rate').value||null,
+    bio:document.getElementById('ed_bio').value||null,
+    location:document.getElementById('ed_location').value||null,
+    website:document.getElementById('ed_website').value||null,
+    job_title:document.getElementById('ed_job_title').value||null,
+    company:document.getElementById('ed_company').value||null
+  };
+  var{error}=await sb.from(TABLE).update(updates).eq('id',currentUser.id);
+  if(error){msgEl.textContent='Error: '+error.message;msgEl.style.background='rgba(255,59,48,.1)';msgEl.style.color='#ff6b6b'}
+  else{Object.assign(currentUser,updates);msgEl.textContent='Profile saved ✓';msgEl.style.background='rgba(74,222,128,.1)';msgEl.style.color='#4ade80';loadProfiles();showDashboard()}
+  msgEl.style.display='block';setTimeout(function(){msgEl.style.display='none'},3000);
+}
+
+async function confirmDeleteAccount(){
+  if(!confirm('Are you sure you want to delete your account? This cannot be undone.'))return;
+  if(!confirm('Last chance — this will permanently delete your profile and all photos.'))return;
+  await sb.from(TABLE).update({is_active:false}).eq('id',currentUser.id);
+  currentUser=null;localStorage.removeItem('flame_session');
+  closeLogin();loadProfiles();alert('Your account has been deactivated.');
+}
+
+// === AUTO-LOGIN FROM SESSION ===
+async function checkSession(){
+  var session=localStorage.getItem('flame_session');
+  if(!session)return;
+  try{
+    var s=JSON.parse(session);
+    var{data}=await sb.from(TABLE).select('*').eq('id',s.id).eq('is_active',true).single();
+    if(data)currentUser=data;
+  }catch(e){}
 }
 
 // === PROFILE DETAIL MODAL ===
@@ -388,72 +679,60 @@ function openProfile(idx){
   var ph=p.phone.replace(/\D/g,'');
   var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
   
-  // Build photo carousel
   if(photos.length>0){
-    var h='';
-    photos.forEach(function(img,i){h+='<img src="'+img+'" alt="'+p.name+'" class="'+(i===0?'active':'')+'">'});
-    if(photos.length>1){
-      h+='<button class="pm-nav prev" onclick="pmNav(-1)">‹</button><button class="pm-nav next" onclick="pmNav(1)">›</button><div class="pm-dots">';
-      photos.forEach(function(_,i){h+='<span class="'+(i===0?'active':'')+'" onclick="pmGo('+i+')"></span>'});
-      h+='</div>';
-    }
+    var h='';photos.forEach(function(img,i){h+='<img src="'+img+'" alt="'+p.name+'" class="'+(i===0?'active':'')+'">'});
+    if(photos.length>1){h+='<button class="pm-nav prev" onclick="pmNav(-1)">‹</button><button class="pm-nav next" onclick="pmNav(1)">›</button><div class="pm-dots">';photos.forEach(function(_,i){h+='<span class="'+(i===0?'active':'')+'" onclick="pmGo('+i+')"></span>'});h+='</div>'}
     photosEl.innerHTML=h;photosEl.setAttribute('data-index','0');photosEl.style.display='block';
-  } else {
-    photosEl.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:80px">🔥</div>';
-    photosEl.style.display='block';
-  }
+  }else{photosEl.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:80px">🔥</div>';photosEl.style.display='block'}
   
-  // Build body
-  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2>'
-    +'<div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div>'
-    +'<div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'</div>'
-    +'<p class="pm-bio">'+(p.bio||'No bio yet.')+'</p>'
-    +'<div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
-  
+  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2><div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div><div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'</div><p class="pm-bio">'+(p.bio||'No bio yet.')+'</p><div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
   modal.classList.add('open');document.body.style.overflow='hidden';
 }
 function closeProfile(){document.getElementById('profileModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('profileModal').addEventListener('click',function(e){if(e.target===this)closeProfile()});
 
 var pmIdx=0;
-function pmNav(dir){
-  var el=document.getElementById('pmPhotos'),imgs=el.querySelectorAll('img'),dots=el.querySelectorAll('.pm-dots span');
-  pmIdx=(parseInt(el.getAttribute('data-index')||0)+dir+imgs.length)%imgs.length;
-  el.setAttribute('data-index',pmIdx);
-  imgs.forEach(function(img,i){img.classList.toggle('active',i===pmIdx)});
-  dots.forEach(function(d,i){d.classList.toggle('active',i===pmIdx)});
+function pmNav(dir){var el=document.getElementById('pmPhotos'),imgs=el.querySelectorAll('img'),dots=el.querySelectorAll('.pm-dots span');pmIdx=(parseInt(el.getAttribute('data-index')||0)+dir+imgs.length)%imgs.length;el.setAttribute('data-index',pmIdx);imgs.forEach(function(img,i){img.classList.toggle('active',i===pmIdx)});dots.forEach(function(d,i){d.classList.toggle('active',i===pmIdx)})}
+function pmGo(i){var el=document.getElementById('pmPhotos'),imgs=el.querySelectorAll('img'),dots=el.querySelectorAll('.pm-dots span');pmIdx=i;el.setAttribute('data-index',i);imgs.forEach(function(img,j){img.classList.toggle('active',j===i)});dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
+
+// === RENDER PROFILE CARDS ===
+function buildCarousel(images,name){
+  if(!images||images.length===0)return '<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:64px">🔥</div>';
+  if(images.length===1)return '<img src="'+images[0]+'" alt="'+name+'" loading="lazy" style="pointer-events:none">';
+  var h='<div class="carousel-wrap" data-index="0">';images.forEach(function(img,i){h+='<img src="'+img+'" alt="'+name+'" loading="lazy" class="'+(i===0?'active':'')+'">'});
+  h+='</div><button class="carousel-btn prev" onclick="event.stopPropagation();carouselNav(this,-1)">‹</button><button class="carousel-btn next" onclick="event.stopPropagation();carouselNav(this,1)">›</button><div class="carousel-dots">';
+  images.forEach(function(_,i){h+='<span class="'+(i===0?'active':'')+'" onclick="event.stopPropagation();carouselGo(this,'+i+')"></span>'});return h+'</div>';
 }
-function pmGo(i){
-  var el=document.getElementById('pmPhotos'),imgs=el.querySelectorAll('img'),dots=el.querySelectorAll('.pm-dots span');
-  pmIdx=i;el.setAttribute('data-index',i);
-  imgs.forEach(function(img,j){img.classList.toggle('active',j===i)});
-  dots.forEach(function(d,j){d.classList.toggle('active',j===i)});
+function carouselNav(btn,dir){var cm=btn.closest('.cm'),wrap=cm.querySelector('.carousel-wrap'),imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');var idx=(parseInt(wrap.getAttribute('data-index'))+dir+imgs.length)%imgs.length;wrap.setAttribute('data-index',idx);imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx)})}
+function carouselGo(dot,idx){var cm=dot.closest('.cm'),wrap=cm.querySelector('.carousel-wrap'),imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');wrap.setAttribute('data-index',idx);imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(d,i){d.classList.toggle('active',i===idx)})}
+
+function renderCard(p,animate,idx){
+  var ph=p.phone.replace(/\D/g,'');
+  var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
+  var carousel=buildCarousel(p.photos,p.name);
+  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div>'+(p.rate?'<span class="rt">💰 GY$'+p.rate+'/hr</span>':'')+'<p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
 }
 
-// === LOAD PROFILES FROM SUPABASE ===
+// === LOAD PROFILES ===
 async function loadProfiles(){
   var grid=document.getElementById('ppg');
   grid.innerHTML='<div style="text-align:center;padding:40px;color:#555;grid-column:1/-1">Loading profiles...</div>';
-  
-  var{data,error}=await sb.from(TABLE).select('*').order('created_at',{ascending:false});
+  var{data,error}=await sb.from(TABLE).select('*').eq('is_active',true).order('created_at',{ascending:false});
   if(error){grid.innerHTML='<div style="text-align:center;padding:40px;color:#555;grid-column:1/-1">Error loading profiles</div>';return}
   
-  // Also add demo profiles if no real ones yet
   var demoProfiles=[
     {name:"Natasha",age:24,city:"Georgetown",gender:"Woman",bio:"Dancehall queen & pharmacy student",phone:"+5926001001",photos:["https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=800&fit=crop"],verified:true,rate:"5,000",nationality:"Guyanese"},
     {name:"Priya",age:27,city:"Georgetown",gender:"Woman",bio:"Software dev & cricket fanatic",phone:"+5926001002",photos:["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=800&fit=crop"],verified:true,rate:"8,000",nationality:"Guyanese"},
     {name:"Shantel",age:22,city:"Linden",gender:"Woman",bio:"Nursing student & karaoke lover",phone:"+5926001003",photos:["https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=800&fit=crop"],verified:false,rate:"3,000",nationality:"Guyanese"},
-    {name:"Anisa",age:25,city:"New Amsterdam",gender:"Woman",bio:"Teacher by day, artist by night",phone:"+5926001004",photos:["https://images.unsplash.com/photo-1514315384763-ba401779410f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600&h=800&fit=crop"],verified:true,rate:"6,000",nationality:"Guyanese"},
     {name:"Camille",age:29,city:"Bartica",gender:"Woman",bio:"Adventure junkie & nature lover",phone:"+5926001005",photos:["https://images.unsplash.com/photo-1521566652839-697aa473761a?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&h=800&fit=crop"],verified:true,rate:"7,000",nationality:"Guyanese"},
     {name:"Marcus",age:26,city:"Georgetown",gender:"Man",bio:"Gym coach & cricket player",phone:"+5926001011",photos:["https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=800&fit=crop"],verified:true,rate:"6,000",nationality:"Guyanese"},
     {name:"Devon",age:30,city:"Linden",gender:"Man",bio:"Mining engineer who loves to party",phone:"+5926001012",photos:["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=800&fit=crop"],verified:true,rate:"8,000",nationality:"Guyanese"},
     {name:"Anika",age:28,city:"Georgetown",gender:"Woman",bio:"Lawyer in training & gym lover",phone:"+5926001009",photos:["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600&h=800&fit=crop","https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=800&fit=crop"],verified:true,rate:"10,000",nationality:"Guyanese"}
   ];
   
-  var allProfiles=[...data,...demoProfiles];
-  allProfilesData=allProfiles;
+  allProfilesData=[...data,...demoProfiles];
   grid.innerHTML='';
-  allProfiles.forEach(function(p,i){grid.innerHTML+=renderCard(p,(i*.04)+'s',i)});
+  allProfilesData.forEach(function(p,i){grid.innerHTML+=renderCard(p,(i*.04)+'s',i)});
   filterProfiles();
 }
 
@@ -463,92 +742,34 @@ function filterProfiles(){
   var city=document.getElementById('filterCity').value;
   var gender=document.getElementById('filterGender').value;
   var ageRange=document.getElementById('filterAge').value;
-  var cards=document.querySelectorAll('#ppg .cd');
-  var visible=0;
+  var cards=document.querySelectorAll('#ppg .cd');var visible=0;
   cards.forEach(function(card){
     var n=card.getAttribute('data-name')||'',c=card.getAttribute('data-city')||'',g=card.getAttribute('data-gender')||'',a=parseInt(card.getAttribute('data-age'))||0;
     var show=true;
     if(search&&n.indexOf(search)===-1)show=false;
     if(city&&c!==city)show=false;
     if(gender&&g!==gender)show=false;
-    if(ageRange){
-      if(ageRange==='18-24'&&(a<18||a>24))show=false;
-      if(ageRange==='25-29'&&(a<25||a>29))show=false;
-      if(ageRange==='30+'&&a<30)show=false;
-    }
-    card.style.display=show?'':'none';
-    if(show)visible++;
+    if(ageRange){if(ageRange==='18-24'&&(a<18||a>24))show=false;if(ageRange==='25-29'&&(a<25||a>29))show=false;if(ageRange==='30+'&&a<30)show=false}
+    card.style.display=show?'':'none';if(show)visible++;
   });
   document.getElementById('filterCount').textContent=visible+' profile'+(visible!==1?'s':'');
   document.getElementById('noResults').style.display=visible===0?'block':'none';
 }
-function resetFilters(){
-  document.getElementById('searchInput').value='';
-  document.getElementById('filterCity').value='';
-  document.getElementById('filterGender').value='';
-  document.getElementById('filterAge').value='';
-  filterProfiles();
-}
+function resetFilters(){['searchInput','filterCity','filterGender','filterAge'].forEach(function(id){document.getElementById(id).value=''});filterProfiles()}
 
-// === ANIMATED STAT COUNTERS ===
+// === ANIMATED COUNTERS ===
 var statsAnimated=false;
-function animateCounters(){
-  if(statsAnimated)return;statsAnimated=true;
-  document.querySelectorAll('#statsSection .sn').forEach(function(el){
-    var target=parseInt(el.getAttribute('data-target')),suffix=el.getAttribute('data-suffix')||'',startTime=null;
-    function step(ts){
-      if(!startTime)startTime=ts;
-      var progress=Math.min((ts-startTime)/1500,1),eased=1-Math.pow(1-progress,3);
-      el.textContent=Math.floor(eased*target)+suffix;
-      if(progress<1)requestAnimationFrame(step);else el.textContent=target+suffix;
-    }
-    requestAnimationFrame(step);
-  });
-}
-var statsObs=new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting)animateCounters()})},{threshold:0.3});
-statsObs.observe(document.getElementById('statsSection'));
+function animateCounters(){if(statsAnimated)return;statsAnimated=true;document.querySelectorAll('#statsSection .sn').forEach(function(el){var target=parseInt(el.getAttribute('data-target')),suffix=el.getAttribute('data-suffix')||'',startTime=null;function step(ts){if(!startTime)startTime=ts;var p=Math.min((ts-startTime)/1500,1);el.textContent=Math.floor((1-Math.pow(1-p,3))*target)+suffix;if(p<1)requestAnimationFrame(step);else el.textContent=target+suffix}requestAnimationFrame(step)})}
+new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting)animateCounters()})},{threshold:.3}).observe(document.getElementById('statsSection'));
 
 // === STICKY MOBILE CTA ===
-var heroSection=document.querySelector('.hr'),stickyCta=document.getElementById('stickyCta');
-var stickyObs=new IntersectionObserver(function(e){e.forEach(function(e){
-  if(!e.isIntersecting&&window.innerWidth<=768)stickyCta.style.display='block';
-  else stickyCta.style.display='none';
-})},{threshold:0.1});
-stickyObs.observe(heroSection);
+new IntersectionObserver(function(e){e.forEach(function(e){var s=document.getElementById('stickyCta');if(!e.isIntersecting&&window.innerWidth<=768)s.style.display='block';else s.style.display='none'})},{threshold:.1}).observe(document.querySelector('.hr'));
 
-// === TOUCH SWIPE FOR CAROUSELS ===
-document.addEventListener('touchstart',function(e){
-  var cm=e.target.closest('.cm,.pm-photos');
-  if(!cm)return;
-  cm._touchStartX=e.touches[0].clientX;
-  cm._touchStartY=e.touches[0].clientY;
-},{passive:true});
-document.addEventListener('touchmove',function(e){
-  var cm=e.target.closest('.cm,.pm-photos');
-  if(!cm||!cm._touchStartX)return;
-  var dx=e.touches[0].clientX-cm._touchStartX;
-  var dy=e.touches[0].clientY-cm._touchStartY;
-  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10){e.preventDefault()}
-},{passive:false});
-document.addEventListener('touchend',function(e){
-  var cm=e.target.closest('.cm,.pm-photos');
-  if(!cm||!cm._touchStartX)return;
-  var dx=e.changedTouches[0].clientX-cm._touchStartX;
-  cm._touchStartX=null;
-  if(Math.abs(dx)<40)return;
-  if(cm.classList.contains('pm-photos')){
-    pmNav(dx<0?1:-1);
-  } else {
-    var wrap=cm.querySelector('.carousel-wrap');
-    if(!wrap)return;
-    var imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');
-    var idx=(parseInt(wrap.getAttribute('data-index'))+(dx<0?1:-1)+imgs.length)%imgs.length;
-    wrap.setAttribute('data-index',idx);
-    imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});
-    dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx)});
-  }
-});
+// === TOUCH SWIPE ===
+document.addEventListener('touchstart',function(e){var cm=e.target.closest('.cm,.pm-photos');if(cm){cm._sx=e.touches[0].clientX;cm._sy=e.touches[0].clientY}},{passive:true});
+document.addEventListener('touchmove',function(e){var cm=e.target.closest('.cm,.pm-photos');if(cm&&cm._sx){var dx=e.touches[0].clientX-cm._sx,dy=e.touches[0].clientY-cm._sy;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10)e.preventDefault()}},{passive:false});
+document.addEventListener('touchend',function(e){var cm=e.target.closest('.cm,.pm-photos');if(!cm||!cm._sx)return;var dx=e.changedTouches[0].clientX-cm._sx;cm._sx=null;if(Math.abs(dx)<40)return;if(cm.classList.contains('pm-photos')){pmNav(dx<0?1:-1)}else{var wrap=cm.querySelector('.carousel-wrap');if(!wrap)return;var imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');var idx=(parseInt(wrap.getAttribute('data-index'))+(dx<0?1:-1)+imgs.length)%imgs.length;wrap.setAttribute('data-index',idx);imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx)})}});
 
-// === INIT: LOAD PROFILES FROM SUPABASE ===
-loadProfiles();
+// === INIT ===
+checkSession().then(function(){loadProfiles()});
 </script></body></html>
