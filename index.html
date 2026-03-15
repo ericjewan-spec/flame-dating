@@ -195,9 +195,6 @@
 <label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:#888;cursor:pointer">
 <input type="checkbox" id="sf_terms" style="width:18px;height:18px;margin-top:2px;accent-color:var(--f)"> I agree to the <a href="#" style="color:var(--f)">Terms of Service</a> and <a href="#" style="color:var(--f)">Privacy Policy</a> *
 </label>
-<label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:#888;cursor:pointer;margin-top:8px">
-<input type="checkbox" id="sf_newsletter" style="width:18px;height:18px;margin-top:2px;accent-color:var(--f)"> Subscribe to our newsletter
-</label>
 </div>
 <div id="signupError" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center;margin-top:4px"></div>
 <div style="display:flex;gap:8px;margin-top:4px">
@@ -506,7 +503,7 @@ async function submitProfile(){
       p_company:document.getElementById('sf_company')?document.getElementById('sf_company').value:null,
       p_interests:interests,
       p_terms_accepted:true,
-      p_newsletter:document.getElementById('sf_newsletter').checked
+      p_newsletter:false
     });
     
     if(error)throw error;
