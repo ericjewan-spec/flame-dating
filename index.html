@@ -84,7 +84,7 @@
 <div class="no-results" id="noResults"><span>🔍</span>No profiles match your filters.<br>Try broadening your search.</div>
 <div id="loadMoreWrap" style="text-align:center;margin-top:28px;display:none"><button id="loadMoreBtn" onclick="showMoreProfiles()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;padding:14px 40px;border-radius:50px;font-size:15px;cursor:pointer;font-family:inherit;transition:all .3s">Load More Profiles</button></div>
 </section>
-<section class="ds" id="donate"><div style="font-size:48px;margin-bottom:16px">❤️‍🔥</div><h2>Support the Movement</h2><p style="color:#777;font-size:16px;margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto">Flame is 100% free and ad-free. Help us keep the lights on.</p><a href="https://wa.me/5926001000?text=I%20want%20to%20donate%20to%20Flame!" target="_blank" class="dc">❤️ Become a Patron</a></section>
+<section class="ds" id="donate"><div style="font-size:48px;margin-bottom:16px">❤️‍🔥</div><h2>Support the Movement</h2><p style="color:#777;font-size:16px;margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto">Flame is 100% free and ad-free. Help us keep the lights on with crypto.</p><div style="max-width:480px;margin:0 auto"><div style="background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;text-align:center"><div style="font-size:14px;color:#aaa;margin-bottom:12px">Send SOL or SPL tokens to:</div><div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:14px 16px;font-family:monospace;font-size:13px;color:var(--g);word-break:break-all;margin-bottom:12px;user-select:all" id="solanaAddr">CqL3X9Bd4wmyJCyPB24NGW6vxqt7f6C8qb7zXAQK8htY</div><button onclick="copySOL()" id="copyBtn" style="background:linear-gradient(135deg,#9945FF,#14F195);border:none;color:#fff;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">📋 Copy Solana Address</button><div style="margin-top:16px;display:flex;justify-content:center;gap:12px"><span style="font-size:12px;color:#555;padding:6px 14px;border-radius:50px;background:rgba(153,69,255,.1);border:1px solid rgba(153,69,255,.2);color:#9945FF">◎ SOL</span><span style="font-size:12px;color:#555;padding:6px 14px;border-radius:50px;background:rgba(20,241,149,.1);border:1px solid rgba(20,241,149,.2);color:#14F195">USDC</span><span style="font-size:12px;color:#555;padding:6px 14px;border-radius:50px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#aaa">SPL Tokens</span></div></div></div></section>
 <section class="ctas"><h2>Ready to Find Your Match?</h2><p>Create your free profile and start connecting today</p><button onclick="openSignup()" class="bp" style="display:inline-block;cursor:pointer">Create Free Profile 🔥</button></section>
 <footer class="fo"><div class="foi"><div class="lo" style="font-size:18px" onclick="showPage('home')">🔥 Flame <span style="font-size:13px;color:#666;margin-left:8px">Made in Guyana 🇬🇾</span></div><p>© 2026 Flame Dating — flame.gy</p></div></footer>
 </div>
@@ -932,6 +932,26 @@ new IntersectionObserver(function(e){e.forEach(function(e){var s=document.getEle
 document.addEventListener('touchstart',function(e){var cm=e.target.closest('.cm,.pm-photos');if(cm){cm._sx=e.touches[0].clientX;cm._sy=e.touches[0].clientY}},{passive:true});
 document.addEventListener('touchmove',function(e){var cm=e.target.closest('.cm,.pm-photos');if(cm&&cm._sx){var dx=e.touches[0].clientX-cm._sx,dy=e.touches[0].clientY-cm._sy;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10)e.preventDefault()}},{passive:false});
 document.addEventListener('touchend',function(e){var cm=e.target.closest('.cm,.pm-photos');if(!cm||!cm._sx)return;var dx=e.changedTouches[0].clientX-cm._sx;cm._sx=null;if(Math.abs(dx)<40)return;if(cm.classList.contains('pm-photos')){pmNav(dx<0?1:-1)}else{var wrap=cm.querySelector('.carousel-wrap');if(!wrap)return;var imgs=wrap.querySelectorAll('img'),dots=cm.querySelectorAll('.carousel-dots span');var idx=(parseInt(wrap.getAttribute('data-index'))+(dx<0?1:-1)+imgs.length)%imgs.length;wrap.setAttribute('data-index',idx);imgs.forEach(function(img,i){img.classList.toggle('active',i===idx)});dots.forEach(function(dot,i){dot.classList.toggle('active',i===idx)})}});
+
+// === COPY SOLANA ADDRESS ===
+function copySOL(){
+  var addr='CqL3X9Bd4wmyJCyPB24NGW6vxqt7f6C8qb7zXAQK8htY';
+  navigator.clipboard.writeText(addr).then(function(){
+    var btn=document.getElementById('copyBtn');
+    btn.textContent='✅ Copied!';btn.style.background='linear-gradient(135deg,#14F195,#9945FF)';
+    setTimeout(function(){btn.textContent='📋 Copy Solana Address';btn.style.background='linear-gradient(135deg,#9945FF,#14F195)'},2000);
+  }).catch(function(){
+    // Fallback for older browsers
+    var el=document.getElementById('solanaAddr');
+    var range=document.createRange();range.selectNodeContents(el);
+    var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    var btn=document.getElementById('copyBtn');
+    btn.textContent='✅ Copied!';
+    setTimeout(function(){btn.textContent='📋 Copy Solana Address'},2000);
+  });
+}
 
 // === INIT ===
 checkSession().then(function(){loadProfiles()});
