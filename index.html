@@ -122,7 +122,8 @@
 <label>Email Address *</label>
 <input type="email" id="sf_email" placeholder="you@email.com" aria-label="Email address">
 <label>Phone / WhatsApp *</label>
-<input type="tel" id="sf_phone" placeholder="+592 600 0000" aria-label="Phone number">
+<input type="tel" id="sf_phone" placeholder="+592 600 0000 or any international number" aria-label="Phone number">
+<p style="font-size:11px;color:#555;margin-top:-8px">Include country code (e.g. +592 for Guyana, +1 for US/Canada, +44 for UK)</p>
 <label>Password *</label>
 <div style="position:relative">
 <input type="password" id="sf_password" placeholder="Min 8 chars, upper, lower, number, special" oninput="checkPasswordStrength(this.value)" aria-label="Password">
@@ -235,7 +236,7 @@
 <p class="sub">Enter your phone and password</p>
 <div class="frm">
 <label>Phone / WhatsApp</label>
-<input type="tel" id="login_phone" placeholder="+592 600 0000" aria-label="Phone number">
+<input type="tel" id="login_phone" placeholder="Enter your phone with country code" aria-label="Phone number">
 <label>Password</label>
 <div style="position:relative">
 <input type="password" id="login_password" placeholder="Your password" aria-label="Password">
@@ -364,6 +365,7 @@ function validateStep1(){
   if(!u||!/^[a-zA-Z0-9_]{3,20}$/.test(u)){alert('Username must be 3-20 alphanumeric characters');return false}
   if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){alert('Please enter a valid email');return false}
   if(!p){alert('Please enter your phone number');return false}
+  if(!p.replace(/[\s\-()]/g,'').startsWith('+')){alert('Please include your country code (e.g. +592 for Guyana, +1 for US/Canada)');return false}
   if(pw.length<8){alert('Password must be at least 8 characters');return false}
   if(!/[A-Z]/.test(pw)||!/[a-z]/.test(pw)||!/[0-9]/.test(pw)||!/[^A-Za-z0-9]/.test(pw)){alert('Password needs uppercase, lowercase, number, and special character');return false}
   if(pw!==pw2){alert('Passwords do not match');return false}
@@ -477,7 +479,7 @@ async function submitProfile(){
   var errEl=document.getElementById('signupError');errEl.style.display='none';
   
   var phone=document.getElementById('sf_phone').value.trim().replace(/[\s\-()]/g,'');
-  if(!phone.startsWith('+'))phone='+592'+phone;
+  if(!phone.startsWith('+')){alert('Please include your country code (e.g. +592 for Guyana, +1 for US)');btn.textContent='🔥 Create My Profile';btn.disabled=false;return}
   
   var interests=document.getElementById('sf_interests')?document.getElementById('sf_interests').value.split(',').map(function(s){return s.trim()}).filter(Boolean):[];
   
@@ -537,7 +539,7 @@ async function loginProfile(){
   var pw=document.getElementById('login_password').value;
   var errEl=document.getElementById('loginError');errEl.style.display='none';
   if(!phone||!pw){alert('Enter phone and password');return}
-  if(!phone.startsWith('+'))phone='+592'+phone;
+  if(!phone.startsWith('+')){alert('Please include your country code (e.g. +592)');btn.textContent='🔓 Log In';btn.disabled=false;return}
   
   var btn=document.getElementById('loginBtn');btn.textContent='Logging in...';btn.disabled=true;
   
@@ -678,7 +680,7 @@ function openProfile(idx){
     photosEl.innerHTML=h;photosEl.setAttribute('data-index','0');photosEl.style.display='block';
   }else{photosEl.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a1a,#222);font-size:80px">🔥</div>';photosEl.style.display='block'}
   
-  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2><div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div><div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div></div><p class="pm-bio">'+(p.bio||'No bio yet.')+'</p><div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
+  bodyEl.innerHTML='<h2>'+p.name+(p.age?', '+p.age:'')+'</h2><div class="pm-loc">📍 '+(p.city||'Georgetown')+', Guyana'+(p.verified?' &nbsp;✅ Verified':'')+'</div><div class="pm-tags"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div></div><div style="font-size:14px;color:#aaa;margin:8px 0">📱 '+(p.phone||'')+'</div><p class="pm-bio">'+(p.bio||'No bio yet.')+'</p><div class="pm-actions"><a href="'+wa+'" target="_blank" class="wa" style="flex:1">💬 WhatsApp</a></div>';
   modal.classList.add('open');document.body.style.overflow='hidden';
 }
 function closeProfile(){document.getElementById('profileModal').classList.remove('open');document.body.style.overflow=''}
@@ -703,7 +705,7 @@ function renderCard(p,animate,idx){
   var ph=p.phone.replace(/\D/g,'');
   var wa='https://wa.me/'+ph+'?text=Hey%20'+encodeURIComponent(p.name)+'%20Found%20you%20on%20Flame!';
   var carousel=buildCarousel(p.photos,p.name);
-  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div><p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
+  return '<div class="cd" data-name="'+(p.name||'').toLowerCase()+'" data-city="'+(p.city||'')+'" data-gender="'+(p.gender||'')+'" data-age="'+(p.age||0)+'" style="animation:fu .5s ease '+(animate||'0s')+' both"><div class="cm">'+carousel+'<div class="co"></div>'+(p.verified?'<div class="cv">✅ Verified</div>':'')+'<div class="cn"><div class="cna">'+p.name+(p.age?', '+p.age:'')+'</div><div class="cl">📍 '+(p.city||'Georgetown')+', Guyana</div></div></div><div class="cbo"><div class="nt">🇬🇾 '+(p.nationality||'Guyanese')+'</div><div style="font-size:13px;color:#aaa;margin:6px 0">📱 '+(p.phone||'')+'</div><p class="bi">'+(p.bio||'New here!')+'</p><div class="ca"><a href="'+wa+'" target="_blank" class="wa">💬 WhatsApp</a><span class="gb" onclick="openProfile('+idx+')" style="cursor:pointer">View Profile</span></div></div></div>';
 }
 
 // === LOAD PROFILES ===
