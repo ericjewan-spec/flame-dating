@@ -244,8 +244,71 @@
 </div>
 <div id="loginError" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center"></div>
 <button class="sbtn" id="loginBtn" onclick="loginProfile()">🔓 Log In</button>
-<p style="text-align:center;font-size:12px;color:#555;margin-top:12px">Don't have a profile? <a style="color:var(--f);cursor:pointer" onclick="closeLogin();openSignup()">Sign up free</a></p>
+<p style="text-align:center;font-size:12px;color:#555;margin-top:12px"><a style="color:var(--f);cursor:pointer" onclick="showForgotPassword()">Forgot password?</a></p>
+<p style="text-align:center;font-size:12px;color:#555;margin-top:4px">Don't have a profile? <a style="color:var(--f);cursor:pointer" onclick="closeLogin();openSignup()">Sign up free</a></p>
 </div>
+</div>
+
+<!-- Forgot Password Step 1: Enter Phone -->
+<div id="forgotStep1" style="display:none">
+<div style="text-align:center;margin-bottom:8px;font-size:36px">🔑</div>
+<h2>Reset Password</h2>
+<p class="sub">Enter the phone number linked to your account</p>
+<div class="frm">
+<label>Phone / WhatsApp</label>
+<input type="tel" id="reset_phone" placeholder="Enter your phone with country code" aria-label="Phone number">
+<div id="resetError1" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center"></div>
+<button class="sbtn" id="resetBtn1" onclick="forgotStep1()">Find My Account →</button>
+<p style="text-align:center;font-size:12px;color:#555;margin-top:12px"><a style="color:var(--f);cursor:pointer" onclick="showLoginForm()">← Back to login</a></p>
+</div>
+</div>
+
+<!-- Forgot Password Step 2: Verify Identity -->
+<div id="forgotStep2" style="display:none">
+<div style="text-align:center;margin-bottom:8px;font-size:36px">🛡️</div>
+<h2>Verify Your Identity</h2>
+<p class="sub">Answer these questions to confirm it's you</p>
+<div class="frm">
+<div style="background:#141414;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:4px">
+<div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Account found</div>
+<div id="resetFoundInfo" style="font-size:14px;color:#aaa"></div>
+</div>
+<label>Enter Your Full Name *</label>
+<input type="text" id="reset_name" placeholder="Your full name as registered" aria-label="Full name">
+<label>Enter Your City *</label>
+<select id="reset_city" aria-label="City"><option value="">Select your city...</option><option>Georgetown</option><option>Linden</option><option>New Amsterdam</option><option>Anna Regina</option><option>Bartica</option><option>Corriverton</option><option>Rose Hall</option><option>Lethem</option><option>Mahaica</option><option>Parika</option></select>
+<div id="resetError2" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center"></div>
+<button class="sbtn" onclick="forgotStep2()">Verify & Continue →</button>
+<p style="text-align:center;font-size:12px;color:#555;margin-top:12px"><a style="color:var(--f);cursor:pointer" onclick="showForgotPassword()">← Start over</a></p>
+</div>
+</div>
+
+<!-- Forgot Password Step 3: Set New Password -->
+<div id="forgotStep3" style="display:none">
+<div style="text-align:center;margin-bottom:8px;font-size:36px">🔐</div>
+<h2>Set New Password</h2>
+<p class="sub">Choose a strong new password</p>
+<div class="frm">
+<label>New Password *</label>
+<div style="position:relative">
+<input type="password" id="reset_password" placeholder="Min 8 chars, upper, lower, number, special" oninput="checkPasswordStrength(this.value)" aria-label="New password">
+<span onclick="togglePw('reset_password',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:#666">👁</span>
+</div>
+<div id="pwStrength2" style="height:4px;border-radius:2px;background:#2a2a2a;margin-top:-8px;overflow:hidden"><div id="pwBar2" style="height:100%;width:0;transition:all .3s;border-radius:2px"></div></div>
+<div id="pwMsg2" style="font-size:11px;color:#555;margin-top:-4px"></div>
+<label>Confirm New Password *</label>
+<input type="password" id="reset_password2" placeholder="Re-enter new password" aria-label="Confirm new password">
+<div id="resetError3" style="display:none;background:rgba(255,59,48,.1);border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:12px;color:#ff6b6b;font-size:13px;text-align:center"></div>
+<button class="sbtn" id="resetBtn3" onclick="forgotStep3()">🔐 Reset Password</button>
+</div>
+</div>
+
+<!-- Forgot Password Success -->
+<div id="forgotSuccess" style="display:none" class="success">
+<div class="icon">✅</div>
+<h2 style="color:var(--f)">Password Reset!</h2>
+<p>Your password has been updated. You can now log in with your new password.</p>
+<button class="sbtn" onclick="showLoginForm()" style="margin-top:16px">🔓 Log In Now</button>
 </div>
 
 <!-- Dashboard -->
@@ -339,7 +402,19 @@ document.getElementById('signupModal').addEventListener('click',function(e){if(e
 
 function openLogin(){
   document.getElementById('loginModal').classList.add('open');document.body.style.overflow='hidden';
-  if(currentUser){showDashboard()}else{document.getElementById('loginForm').style.display='block';document.getElementById('dashboard').style.display='none'}
+  if(currentUser){showDashboard()}else{showLoginForm()}
+}
+function showLoginForm(){
+  ['loginForm','forgotStep1','forgotStep2','forgotStep3','forgotSuccess','dashboard'].forEach(function(id){document.getElementById(id).style.display='none'});
+  document.getElementById('loginForm').style.display='block';
+  document.getElementById('login_phone').value='';document.getElementById('login_password').value='';
+  document.getElementById('loginError').style.display='none';
+}
+function showForgotPassword(){
+  ['loginForm','forgotStep1','forgotStep2','forgotStep3','forgotSuccess','dashboard'].forEach(function(id){document.getElementById(id).style.display='none'});
+  document.getElementById('forgotStep1').style.display='block';
+  document.getElementById('reset_phone').value='';
+  document.getElementById('resetError1').style.display='none';
 }
 function closeLogin(){document.getElementById('loginModal').classList.remove('open');document.body.style.overflow=''}
 document.getElementById('loginModal').addEventListener('click',function(e){if(e.target===this)closeLogin()});
@@ -388,10 +463,13 @@ function checkPasswordStrength(pw){
   if(score<=2){msg='Weak';color='#ff3b30'}
   else if(score<=4){msg='Fair';color='#ff9500'}
   else{msg='Strong';color='#4ade80'}
-  document.getElementById('pwBar').style.width=(score/6*100)+'%';
-  document.getElementById('pwBar').style.background=color;
-  document.getElementById('pwMsg').textContent=pw.length>0?msg:'';
-  document.getElementById('pwMsg').style.color=color;
+  // Update whichever strength bar exists
+  var bars=[['pwBar','pwMsg'],['pwBar2','pwMsg2']];
+  bars.forEach(function(b){
+    var bar=document.getElementById(b[0]),m=document.getElementById(b[1]);
+    if(bar){bar.style.width=(score/6*100)+'%';bar.style.background=color}
+    if(m){m.textContent=pw.length>0?msg:'';m.style.color=color}
+  });
 }
 
 function togglePw(id,el){var inp=document.getElementById(id);inp.type=inp.type==='password'?'text':'password';el.textContent=inp.type==='password'?'👁':'🔒'}
@@ -557,6 +635,79 @@ async function loginProfile(){
   }catch(e){
     errEl.textContent=e.message||'Login failed';errEl.style.display='block';
     btn.textContent='🔓 Log In';btn.disabled=false;
+  }
+}
+
+// === FORGOT PASSWORD ===
+var resetPhone='';
+
+async function forgotStep1(){
+  var phone=document.getElementById('reset_phone').value.trim().replace(/[\s\-()]/g,'');
+  var errEl=document.getElementById('resetError1');errEl.style.display='none';
+  if(!phone){alert('Please enter your phone number');return}
+  if(!phone.startsWith('+')){alert('Please include your country code (e.g. +592)');return}
+  
+  var btn=document.getElementById('resetBtn1');btn.textContent='Searching...';btn.disabled=true;
+  
+  // Check if phone exists (just need to know it exists, don't expose sensitive data)
+  var{data,error}=await sb.from(TABLE).select('name,city').eq('phone',phone).eq('is_active',true).maybeSingle();
+  btn.textContent='Find My Account →';btn.disabled=false;
+  
+  if(!data){errEl.textContent='No account found with this phone number';errEl.style.display='block';return}
+  
+  resetPhone=phone;
+  // Show masked name as hint (first 2 chars + asterisks)
+  var maskedName=data.name.substring(0,2)+'*'.repeat(Math.max(data.name.length-2,3));
+  document.getElementById('resetFoundInfo').innerHTML='📱 '+phone+'<br>👤 Name: '+maskedName+'<br>📍 City on file';
+  
+  ['loginForm','forgotStep1','forgotStep2','forgotStep3','forgotSuccess','dashboard'].forEach(function(id){document.getElementById(id).style.display='none'});
+  document.getElementById('forgotStep2').style.display='block';
+}
+
+async function forgotStep2(){
+  var name=document.getElementById('reset_name').value.trim();
+  var city=document.getElementById('reset_city').value;
+  var errEl=document.getElementById('resetError2');errEl.style.display='none';
+  if(!name){alert('Please enter your full name');return}
+  if(!city){alert('Please select your city');return}
+  
+  // Verify against DB
+  var{data,error}=await sb.from(TABLE).select('name,city').eq('phone',resetPhone).eq('is_active',true).maybeSingle();
+  if(!data){errEl.textContent='Account not found';errEl.style.display='block';return}
+  
+  if(data.name.toLowerCase().trim()!==name.toLowerCase().trim()){
+    errEl.textContent='Name does not match our records. Please try again.';errEl.style.display='block';return}
+  if(data.city&&data.city.toLowerCase().trim()!==city.toLowerCase().trim()){
+    errEl.textContent='City does not match our records. Please try again.';errEl.style.display='block';return}
+  
+  // Identity verified — show new password form
+  ['loginForm','forgotStep1','forgotStep2','forgotStep3','forgotSuccess','dashboard'].forEach(function(id){document.getElementById(id).style.display='none'});
+  document.getElementById('forgotStep3').style.display='block';
+}
+
+async function forgotStep3(){
+  var pw=document.getElementById('reset_password').value;
+  var pw2=document.getElementById('reset_password2').value;
+  var errEl=document.getElementById('resetError3');errEl.style.display='none';
+  
+  if(pw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return}
+  if(!/[A-Z]/.test(pw)||!/[a-z]/.test(pw)||!/[0-9]/.test(pw)||!/[^A-Za-z0-9]/.test(pw)){errEl.textContent='Password needs uppercase, lowercase, number, and special character';errEl.style.display='block';return}
+  if(pw!==pw2){errEl.textContent='Passwords do not match';errEl.style.display='block';return}
+  
+  var btn=document.getElementById('resetBtn3');btn.textContent='Resetting...';btn.disabled=true;
+  
+  try{
+    var{data,error}=await sb.rpc('reset_password',{p_phone:resetPhone,p_name:document.getElementById('reset_name').value.trim(),p_city:document.getElementById('reset_city').value,p_new_password:pw});
+    btn.textContent='🔐 Reset Password';btn.disabled=false;
+    if(error)throw error;
+    if(data&&data.error){errEl.textContent=data.error;errEl.style.display='block';return}
+    
+    ['loginForm','forgotStep1','forgotStep2','forgotStep3','forgotSuccess','dashboard'].forEach(function(id){document.getElementById(id).style.display='none'});
+    document.getElementById('forgotSuccess').style.display='block';
+    resetPhone='';
+  }catch(e){
+    btn.textContent='🔐 Reset Password';btn.disabled=false;
+    errEl.textContent=e.message||'Something went wrong';errEl.style.display='block';
   }
 }
 
